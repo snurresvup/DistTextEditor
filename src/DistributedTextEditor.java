@@ -27,6 +27,7 @@ public class DistributedTextEditor extends JFrame {
     private String currentFile = "Untitled";
     private boolean changed = false;
     private boolean connected = false;
+    protected boolean listening = false;
 
     protected ServerSocket serverSocket;
 
@@ -132,9 +133,7 @@ public class DistributedTextEditor extends JFrame {
 
             setTitle("I'm listening on " + localhost + ":"+port);
 
-
             // TODO remember to close this socket when dc'ing (server one)
-
 
             try {
                 serverSocket = new ServerSocket(port);
@@ -143,40 +142,30 @@ public class DistributedTextEditor extends JFrame {
             }
 
             changed = false;
+            listening = true;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
 
-            Thread clientInput = new Thread(){
+            new Thread(){
                 public void run(){
-                    while(true){
-                        Socket socket = waitForConnectionFromClient();
-                        if(socket != null){
-                            try {
-                                ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-                                TextInsertEvent textEvent;
-                                textEvent = (TextInsertEvent) objectInputStream.readObject();
-                                System.out.println(textEvent.getText());
-
-                                socket.close();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                    while(listening){
+                        Socket res;
+                        try {
+                            res = serverSocket.accept();
+                            dispatchNewThread(res);
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
                 }
-            };
-            clientInput.start();
+            }.start();
         }
     };
 
-    protected Socket waitForConnectionFromClient() {
-        Socket res = null;
-        try {
-            res = serverSocket.accept();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return res;
+    protected void dispatchNewThread(Socket socket){
+        System.out.println("dispatched");
+        Thread clientInput = new Thread(new ServerThread(socket, dec));
+        clientInput.start();
     }
 
 
@@ -189,11 +178,13 @@ public class DistributedTextEditor extends JFrame {
             try {
                 Socket socket = new Socket(ipaddress.getText(), Integer.parseInt(portNumber.getText()));
 
-                setTitle("Connected to " + ipaddress.getText() + ":" + portNumber.getText() + "!");
-
+                if(socket.isConnected()) setTitle("Connected to " + ipaddress.getText() + ":" + portNumber.getText() + "!");
+                else setTitle("Failed to connect to" + ipaddress.getText() + ":" + portNumber.getText() + "!");
 
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+
                 objectOutputStream.writeObject(new TextInsertEvent(0, "Hello world!!!!!"));
+                objectOutputStream.writeObject(new TextInsertEvent(0, "Where are we going?"));
 
                 socket.close();
 

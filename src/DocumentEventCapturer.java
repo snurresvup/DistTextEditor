@@ -63,5 +63,9 @@ public class DocumentEventCapturer extends DocumentFilter {
 	}		
 	eventHistory.add(new TextInsertEvent(offset, str));				
 	super.replace(fb, offset, length, str, a);
-    }    
+    }
+
+    public void addTextEvent(MyTextEvent myTextEvent){
+        eventHistory.add(myTextEvent);
+    }
 }
