@@ -5,6 +5,10 @@ import java.io.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.concurrent.*;
 
 public class DistributedTextEditor extends JFrame {
@@ -23,6 +27,9 @@ public class DistributedTextEditor extends JFrame {
     private String currentFile = "Untitled";
     private boolean changed = false;
     private boolean connected = false;
+
+    protected ServerSocket serverSocket;
+
     private DocumentEventCapturer dec = new DocumentEventCapturer();
 
     public DistributedTextEditor() {
@@ -113,18 +120,85 @@ public class DistributedTextEditor extends JFrame {
             } catch (NumberFormatException _) {
                 port = 1337;
             }
-            setTitle("I'm listening on xxx.xxx.xxx:"+port);
+
+            String localhost = null;
+
+            try {
+                InetAddress inetAddress = InetAddress.getLocalHost();
+                localhost = inetAddress.getHostAddress();
+            } catch (UnknownHostException e1) {
+                e1.printStackTrace();
+            }
+
+            setTitle("I'm listening on " + localhost + ":"+port);
+
+
+            // TODO remember to close this socket when dc'ing (server one)
+
+
+            try {
+                serverSocket = new ServerSocket(port);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
+
+            Thread clientInput = new Thread(){
+                public void run(){
+                    while(true){
+                        Socket socket = waitForConnectionFromClient();
+                        if(socket != null){
+                            try {
+                                BufferedReader inputClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                                String s;
+                                while((s = inputClient.readLine()) != null){
+                                    System.out.println(s);
+                                }
+                                socket.close();
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            };
+            clientInput.start();
         }
     };
+
+    protected Socket waitForConnectionFromClient() {
+        Socket res = null;
+        try {
+            res = serverSocket.accept();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return res;
+    }
+
 
     Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
             area1.setText("");
             setTitle("Connecting to " + ipaddress.getText() + ":" + portNumber.getText() + "...");
+
+            try {
+                Socket socket = new Socket(ipaddress.getText(), Integer.parseInt(portNumber.getText()));
+
+                setTitle("Connected to " + ipaddress.getText() + ":" + portNumber.getText() + "!");
+
+                PrintWriter printWriter = new PrintWriter(socket.getOutputStream(), true);
+                printWriter.println("Hello world!");
+                socket.close();
+
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
