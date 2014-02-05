@@ -152,14 +152,14 @@ public class DistributedTextEditor extends JFrame {
                         Socket socket = waitForConnectionFromClient();
                         if(socket != null){
                             try {
-                                BufferedReader inputClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                                String s;
-                                while((s = inputClient.readLine()) != null){
-                                    System.out.println(s);
-                                }
+                                ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+                                TextInsertEvent textEvent;
+                                textEvent = (TextInsertEvent) objectInputStream.readObject();
+                                System.out.println(textEvent.getText());
+
                                 socket.close();
-                            } catch (IOException e1) {
-                                e1.printStackTrace();
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
                         }
                     }
@@ -191,8 +191,10 @@ public class DistributedTextEditor extends JFrame {
 
                 setTitle("Connected to " + ipaddress.getText() + ":" + portNumber.getText() + "!");
 
-                PrintWriter printWriter = new PrintWriter(socket.getOutputStream(), true);
-                printWriter.println("Hello world!");
+
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                objectOutputStream.writeObject(new TextInsertEvent(0, "Hello world!!!!!"));
+
                 socket.close();
 
             } catch (IOException e1) {
