@@ -104,8 +104,13 @@ public class DistributedTextEditor extends JFrame {
             * - Accept a connection
             * - Create a thread to deal with each of the clients
             * */
-            int port = Integer.parseInt(portNumber.getText());
-            if (port < 0 || port > 65536) {
+            int port;
+            try {
+                port = Integer.parseInt(portNumber.getText());
+                if (port < 0 || port > 65536) {
+                    port = 1337; // We default to this portnumber
+                }
+            } catch (NumberFormatException _) {
                 port = 1337;
             }
             setTitle("I'm listening on xxx.xxx.xxx:"+port);

@@ -67,12 +67,21 @@
       <file leaf-file-name="DistributedTextEditor.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/DistributedTextEditor.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="108" column="28" selection-start="3595" selection-end="3595" vertical-scroll-proportion="0.38314787" vertical-offset="1487" max-vertical-offset="3168">
+            <state line="114" column="13" selection-start="3785" selection-end="3785" vertical-scroll-proportion="0.7710652" vertical-offset="1339" max-vertical-offset="3248">
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#2910#3089#0" expanded="true" />
                 <element signature="e#3082#3083#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Integer.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_25.jdk/Contents/Home/src.zip!/java/lang/Integer.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="525" column="22" selection-start="19320" selection-end="19320" vertical-scroll-proportion="0.0" vertical-offset="7823" max-vertical-offset="19632">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -371,9 +380,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_25.jdk/Contents/Home/src.zip!/java/lang/Integer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="525" column="22" selection-start="19320" selection-end="19320" vertical-scroll-proportion="0.0" vertical-offset="7823" max-vertical-offset="19632">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/DistributedTextEditor.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="108" column="28" selection-start="3595" selection-end="3595" vertical-scroll-proportion="0.38314787" vertical-offset="1487" max-vertical-offset="3168">
+        <state line="114" column="13" selection-start="3785" selection-end="3785" vertical-scroll-proportion="0.7710652" vertical-offset="1339" max-vertical-offset="3248">
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#2910#3089#0" expanded="true" />
