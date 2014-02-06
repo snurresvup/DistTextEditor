@@ -4,8 +4,8 @@ import java.awt.event.*;
 import java.io.*;
 import javax.swing.*;
 import javax.swing.text.*;
-import javax.swing.event.*;
-import java.util.concurrent.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class DistributedTextEditor extends JFrame {
 
@@ -104,21 +104,40 @@ public class DistributedTextEditor extends JFrame {
             * - Accept a connection
             * - Create a thread to deal with each of the clients
             * */
-            int port;
-            try {
-                port = Integer.parseInt(portNumber.getText());
-                if (port < 0 || port > 65536) {
-                    port = 1337; // We default to this portnumber
-                }
-            } catch (NumberFormatException _) {
-                port = 1337;
-            }
-            setTitle("I'm listening on xxx.xxx.xxx:"+port);
+            int port = getPortNumber();
+            String address = getLocalHostAddress();
+            setTitle("I'm listening on "+address+":"+port);
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
         }
     };
+
+    private String getLocalHostAddress() {
+        String address = null;
+        try {
+            InetAddress localhost = InetAddress.getLocalHost();
+            address = localhost.getHostAddress();
+        } catch (UnknownHostException e) {
+            System.err.println("Cannot resolve the Internet address of the local host.");
+            System.err.println(e);
+            System.exit(-1);
+        }
+        return address;
+    }
+
+    private int getPortNumber() {
+        int port;
+        try {
+            port = Integer.parseInt(portNumber.getText());
+            if (port < 0 || port > 65536) {
+                port = 1337; // We default to this portnumber
+            }
+        } catch (NumberFormatException _) {
+            port = 1337; // if there is text in the port field
+        }
+        return port;
+    }
 
     Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
