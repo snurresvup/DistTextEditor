@@ -1,5 +1,6 @@
 import java.io.ObjectInputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class ServerThread implements Runnable {
 
@@ -13,13 +14,16 @@ public class ServerThread implements Runnable {
 
     @Override
     public void run() {
-        try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-            MyTextEvent textEvent = (MyTextEvent) objectInputStream.readObject();
-            dec.addTextEvent(textEvent);
-            socket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        while(true){
+            try {
+                ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+                ArrayList<MyTextEvent> textEvent = (ArrayList<MyTextEvent>) objectInputStream.readObject();
+                for(MyTextEvent t : textEvent){
+                    dec.addTextEvent(t);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

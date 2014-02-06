@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
 public class DistributedTextEditor extends JFrame {
@@ -133,7 +134,7 @@ public class DistributedTextEditor extends JFrame {
 
             setTitle("I'm listening on " + localhost + ":"+port);
 
-            // TODO remember to close this socket when dc'ing (server one)
+            // TODO remember to close this socket when dc'ing (server one) - actually all sockets
 
             try {
                 serverSocket = new ServerSocket(port);
@@ -183,10 +184,12 @@ public class DistributedTextEditor extends JFrame {
 
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 
-                objectOutputStream.writeObject(new TextInsertEvent(0, "Hello world!!!!!"));
-                objectOutputStream.writeObject(new TextInsertEvent(0, "Where are we going?"));
+                ArrayList<MyTextEvent> eventSend = new ArrayList<MyTextEvent>();
 
-                socket.close();
+                eventSend.add(new TextInsertEvent(0, "Hello World!"));
+                eventSend.add(new TextInsertEvent(0, "\nWhere are we going?"));
+
+                objectOutputStream.writeObject(eventSend);
 
             } catch (IOException e1) {
                 e1.printStackTrace();
