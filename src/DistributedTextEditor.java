@@ -184,12 +184,8 @@ public class DistributedTextEditor extends JFrame {
 
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 
-                ArrayList<MyTextEvent> eventSend = new ArrayList<MyTextEvent>();
-
-                eventSend.add(new TextInsertEvent(0, "Hello World!"));
-                eventSend.add(new TextInsertEvent(0, "\nWhere are we going?"));
-
-                objectOutputStream.writeObject(eventSend);
+                objectOutputStream.writeObject(new TextInsertEvent(0, "What is this...."));
+                objectOutputStream.writeObject(new TextInsertEvent(0, "\nWhere are we going?"));
 
             } catch (IOException e1) {
                 e1.printStackTrace();

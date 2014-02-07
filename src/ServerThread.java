@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -14,13 +15,17 @@ public class ServerThread implements Runnable {
 
     @Override
     public void run() {
-        while(true){
+        ObjectInputStream objectInputStream = null;
+        try {
+            objectInputStream = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        while(true){ // TODO should run until dced
+            System.out.println("This is the server thread reading.");
             try {
-                ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-                ArrayList<MyTextEvent> textEvent = (ArrayList<MyTextEvent>) objectInputStream.readObject();
-                for(MyTextEvent t : textEvent){
-                    dec.addTextEvent(t);
-                }
+                MyTextEvent textEvent = (MyTextEvent) objectInputStream.readObject();
+                dec.addTextEvent(textEvent);
             } catch (Exception e) {
                 e.printStackTrace();
             }
