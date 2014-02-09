@@ -27,48 +27,7 @@ public class EventReplayer implements Runnable {
     }
 
     public void run() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-                    while (true){//TODO
-                        MyTextEvent mte = (MyTextEvent)inputStream.readObject();
-                        if (mte instanceof TextInsertEvent) {
-                            final TextInsertEvent tie = (TextInsertEvent)mte;
-                            EventQueue.invokeLater(new Runnable() {
-                                public void run() {
-                                    try {
-                                        area.insert(tie.getText(), tie.getOffset());
-                                    } catch (Exception e) {
-                                        System.err.println(e);
-				                                /* We catch all axceptions, as an uncaught exception would make the
-				                                * EDT unwind, which is now healthy.
-				                                */
-                                    }
-                                }
-                            });
-                        } else if (mte instanceof TextRemoveEvent) {
-                            final TextRemoveEvent tre = (TextRemoveEvent)mte;
-                            EventQueue.invokeLater(new Runnable() {
-                                public void run() {
-                                    try {
-                                        area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
-                                    } catch (Exception e) {
-                                        System.err.println(e);
-                                            /* We catch all axceptions, as an uncaught exception would make the
-                                             * EDT unwind, which is now healthy.
-                                             */
-                                    }
-                                }
-                            });
-                        }
-                    }
-                } catch (IOException|ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        startListeningThread();
 
         boolean wasInterrupted = false;
         ObjectOutputStream outputStream = null;
@@ -88,6 +47,51 @@ public class EventReplayer implements Runnable {
             }
         }
         System.out.println("I'm the thread running the EventReplayer, now I die!");
+    }
+
+    private void startListeningThread() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+                    while (true){//TODO
+                        MyTextEvent mte = (MyTextEvent)inputStream.readObject();
+                        if (mte instanceof TextInsertEvent) {
+                            final TextInsertEvent tie = (TextInsertEvent)mte;
+                            EventQueue.invokeLater(new Runnable() {
+                                public void run() {
+                                    try {
+                                        area.insert(tie.getText(), tie.getOffset());
+                                    } catch (Exception e) {
+                                        System.err.println(e);
+				                                /* We catch all exceptions, as an uncaught exception would make the
+				                                * EDT unwind, which is not healthy.
+				                                */
+                                    }
+                                }
+                            });
+                        } else if (mte instanceof TextRemoveEvent) {
+                            final TextRemoveEvent tre = (TextRemoveEvent)mte;
+                            EventQueue.invokeLater(new Runnable() {
+                                public void run() {
+                                    try {
+                                        area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
+                                    } catch (Exception e) {
+                                        System.err.println(e);
+                                            /* We catch all exceptions, as an uncaught exception would make the
+                                             * EDT unwind, which is not healthy.
+                                             */
+                                    }
+                                }
+                            });
+                        }
+                    }
+                } catch (IOException |ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
 }
