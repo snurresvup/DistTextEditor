@@ -1,10 +1,14 @@
 
+import com.sun.deploy.uitoolkit.UIToolkit;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class DistributedTextEditor extends JFrame {
@@ -82,7 +86,7 @@ public class DistributedTextEditor extends JFrame {
                 "Try to type and delete stuff in the top area.\n" +
                 "Then figure out how it works.\n", 0);
 
-        er = new EventReplayer(dec, area2);
+        er = new EventReplayer(dec, area2, this);
         ert = new Thread(er);
         ert.start();
     }
@@ -95,25 +99,56 @@ public class DistributedTextEditor extends JFrame {
         }
     };
 
+    private ServerSocket server;
+    private Socket socket = null;
     Action Listen = new AbstractAction("Listen") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
-            area1.setText("");
-            // TODO: Become a server listening for connections on some port.
-            /*
-            * - Accept a connection
-            * - Create a thread to deal with each of the clients
-            * */
-            int port = getPortNumber();
-            String address = getLocalHostAddress();
-            setTitle("I'm listening on "+address+":"+port);
+            startServer();
+            startConnectionListener();
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
         }
     };
 
-    private String getLocalHostAddress() {
+    private void startServer() {
+        try {
+            if (server != null && server.isBound()) {
+                server.close();
+            }
+            setServer(new ServerSocket(getPortNumber()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void stopServer() {
+        if (server != null && server.isBound()) {
+            try {
+                server.close();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+        area1.setEditable(true);
+        server = null;
+    }
+
+    public void startConnectionListener() {
+        Thread listener = new Thread(new ConnectionListener(this));
+        listener.start();
+    }
+
+    public void setSocket(Socket socket) {
+        this.socket = socket;
+    }
+    
+    public void setServer(ServerSocket serverSocket) {
+        this.server = serverSocket;
+    }
+
+    public String getLocalHostAddress() {
         String address = null;
         try {
             InetAddress localhost = InetAddress.getLocalHost();
@@ -126,7 +161,7 @@ public class DistributedTextEditor extends JFrame {
         return address;
     }
 
-    private int getPortNumber() {
+    public int getPortNumber() {
         int port;
         try {
             port = Integer.parseInt(portNumber.getText());
@@ -142,20 +177,53 @@ public class DistributedTextEditor extends JFrame {
     Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
-            area1.setText("");
-            setTitle("Connecting to " + ipaddress.getText() + ":" + portNumber.getText() + "...");
+            connectToServer();
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
         }
     };
 
+    private void connectToServer() {
+        String ip = getLocalHostAddress();
+        int port = getPortNumber();
+        try {
+            setTitle("Connecting to " + ip + ":" + port + "...");
+            socket = new Socket(ip, port);
+            resetText();
+            setTitle("Connected to " + ip + ":" + port);
+            connected = true;
+            interruptEventReplayer();
+        } catch (UnknownHostException e) {
+            setTitle("Error connecting to " + ip + ":" + port + "! Maybe you got the wrong ip address?!");
+            e.printStackTrace();
+        } catch (IOException e) {
+            setTitle("Connection refused");
+        }
+    }
+
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {
             setTitle("Disconnected");
-            // TODO
+            if (connected) {
+                connected = false;
+                interruptEventReplayer();
+                resetText();
+                try {
+                    socket.close();
+                } catch (IOException ioe) {
+                    // Do nothing
+                }
+            }
+            if (getServer() != null) {
+                stopServer();
+            }
         }
     };
+
+    public void resetText() {
+        area1.setText("");
+    }
 
     Action Save = new AbstractAction("Save") {
         public void actionPerformed(ActionEvent e) {
@@ -211,6 +279,34 @@ public class DistributedTextEditor extends JFrame {
 
     public static void main(String[] arg) {
         new DistributedTextEditor();
+        new DistributedTextEditor();
     }
 
+    public ServerSocket getServer() {
+        return server;
+    }
+
+    public Socket getSocket() {
+        return socket;
+    }
+
+    public void setConnected(boolean connected) {
+        this.connected = connected;
+    }
+
+    public void interruptEventReplayer() {
+        ert.interrupt();
+    }
+
+    public boolean isConnected() {
+        return connected;
+    }
+
+    public JTextArea getArea1() {
+        return area1;
+    }
+
+    public JTextArea getArea2() {
+        return area2;
+    }
 }
