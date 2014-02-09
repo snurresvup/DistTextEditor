@@ -28,7 +28,7 @@ public class EventSender implements Runnable {
             try {
                 out.close();
             } catch (IOException e1) {
-                e1.printStackTrace();
+                // e1.printStackTrace();
             }
         }
     }
