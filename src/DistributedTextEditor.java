@@ -1,6 +1,3 @@
-
-import com.sun.deploy.uitoolkit.UIToolkit;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -141,7 +138,7 @@ public class DistributedTextEditor extends JFrame {
                     // Closing the connected socket
                     socket.close();
                 } catch (IOException ioe) {
-                    // Shhh tell nobody
+                    // Shhh dont tell nobody
                 }
             }
             // In the case where we act as a server. We want to close the server socket and, thereby stop listening
@@ -227,11 +224,37 @@ public class DistributedTextEditor extends JFrame {
         listener.start();
     }
 
+    private void connectToServer() {
+        String ip = getIPAddress();
+        int port = getPortNumber();
+        try {
+            setTitle("Connecting to " + ip + ":" + port + "...");
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(ip, port), 3000);
+            resetText();
+            setTitle("Connected to " + ip + ":" + port);
+            connected = true;
+            interruptEventReplayer();
+        } catch (UnknownHostException e) {
+            setTitle("Error connecting to " + ip + ":" + port + "! Maybe you got the wrong ip address?!");
+            e.printStackTrace();
+        } catch (IOException e) {
+            setTitle("Connection refused");
+        }
+    }
+
     public void resetText() {
+        // Simply resets upper text area
         area1.setText("");
     }
 
+    public void interruptEventReplayer() {
+        // Interrupts the event replayer. This is (ab)used to make it check if its connected.
+        ert.interrupt();
+    }
+
     private void stopServer() {
+        // If the server socket is open, we close it
         if (server != null && server.isBound()) {
             try {
                 server.close();
@@ -239,7 +262,11 @@ public class DistributedTextEditor extends JFrame {
                 ioe.printStackTrace();
             }
         }
+        // We ensure we can edit the text area. In case we have been in listening mode where the upper text area is
+        // not editable
         area1.setEditable(true);
+        // The we also ensure that the server socket is set to null again. Because we use it to check if we are
+        // currently acting as a server.
         server = null;
     }
 
@@ -260,6 +287,7 @@ public class DistributedTextEditor extends JFrame {
         int port;
         try {
             port = Integer.parseInt(portNumber.getText());
+            // The port must be within the port range. If its not we fallback to a default.
             if (port < 0 || port > 65536) {
                 port = 1337; // We default to this portnumber
             }
@@ -269,30 +297,12 @@ public class DistributedTextEditor extends JFrame {
         return port;
     }
 
-    private void connectToServer() {
-        String ip = getAddress();
-        int port = getPortNumber();
-        try {
-            setTitle("Connecting to " + ip + ":" + port + "...");
-            socket = new Socket();
-            socket.connect(new InetSocketAddress(ip, port), 3000);
-            resetText();
-            setTitle("Connected to " + ip + ":" + port);
-            connected = true;
-            interruptEventReplayer();
-        } catch (UnknownHostException e) {
-            setTitle("Error connecting to " + ip + ":" + port + "! Maybe you got the wrong ip address?!");
-            e.printStackTrace();
-        } catch (IOException e) {
-            setTitle("Connection refused");
-        }
-    }
-
-    private String getAddress() {
+    private String getIPAddress() {
         String address = ipaddress.getText();
         return address;
     }
 
+    // Getters and setter used from other threads.
     public ServerSocket getServer() {
         return server;
     }
@@ -311,10 +321,6 @@ public class DistributedTextEditor extends JFrame {
 
     public void setConnected(boolean connected) {
         this.connected = connected;
-    }
-
-    public void interruptEventReplayer() {
-        ert.interrupt();
     }
 
     public boolean isConnected() {
