@@ -5,12 +5,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class EventReceiver implements Runnable {
     private Socket socket;
-    private LinkedBlockingQueue<MyTextEvent> incomingEvents;
+    private LinkedBlockingQueue<MyTextEvent> receivedEvents;
     private EventReplayer er;
 
-    public EventReceiver(Socket socket, LinkedBlockingQueue<MyTextEvent> incomingEvents, EventReplayer er) {
+    public EventReceiver(Socket socket, LinkedBlockingQueue<MyTextEvent> receivedEvents, EventReplayer er) {
         this.socket = socket;
-        this.incomingEvents = incomingEvents;
+        this.receivedEvents = receivedEvents;
         this.er = er;
     }
 
@@ -21,7 +21,7 @@ public class EventReceiver implements Runnable {
                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
                 while (true) {
                     MyTextEvent mte = (MyTextEvent) in.readObject();
-                    incomingEvents.add(mte);
+                    receivedEvents.add(mte);
                 }
             }
         } catch (ClassNotFoundException e) {
