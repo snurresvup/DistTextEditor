@@ -65,8 +65,8 @@ public class EventReplayer implements Runnable {
                                         area.insert(tie.getText(), tie.getOffset());
                                     } catch (Exception e) {
                                         System.err.println(e);
-				                                /* We catch all exceptions, as an uncaught exception would make the
-				                                * EDT unwind, which is not healthy.
+				                                /* We catch all axceptions, as an uncaught exception would make the
+				                                * EDT unwind, which is now healthy.
 				                                */
                                     }
                                 }
@@ -79,8 +79,8 @@ public class EventReplayer implements Runnable {
                                         area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
                                     } catch (Exception e) {
                                         System.err.println(e);
-                                            /* We catch all exceptions, as an uncaught exception would make the
-                                             * EDT unwind, which is not healthy.
+                                            /* We catch all axceptions, as an uncaught exception would make the
+                                             * EDT unwind, which is now healthy.
                                              */
                                     }
                                 }

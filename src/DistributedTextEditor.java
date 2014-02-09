@@ -4,13 +4,10 @@ import java.awt.event.*;
 import java.io.*;
 import javax.swing.*;
 import javax.swing.text.*;
-import javax.swing.event.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.concurrent.*;
 
 public class DistributedTextEditor extends JFrame {
 
@@ -32,7 +29,9 @@ public class DistributedTextEditor extends JFrame {
 
     protected ServerSocket serverSocket;
 
+
     private DocumentEventCapturer dec = new DocumentEventCapturer();
+    private Socket socket;
 
     public DistributedTextEditor() {
         area1.setFont(new Font("Monospaced",Font.PLAIN,12));
@@ -104,7 +103,6 @@ public class DistributedTextEditor extends JFrame {
         public void actionPerformed(ActionEvent e) {
             saveOld();
             area1.setText("");
-            // TODO: Become a server listening for connections on some port.
             /*
             * - Accept a connection
             * - Create a thread to deal with each of the clients
@@ -128,8 +126,6 @@ public class DistributedTextEditor extends JFrame {
                 e1.printStackTrace();
             }
 
-            // TODO remember to close this socket when dc'ing (server one) - actually all sockets
-
             try {
                 serverSocket = new ServerSocket(port);
                 setTitle("I'm listening on " + localhost + ":"+port);
@@ -142,23 +138,24 @@ public class DistributedTextEditor extends JFrame {
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
 
-            new Thread(){
-                public void run(){
-                    while(listening){
+
+            while(listening){
+                new Thread(){
+                    public void run(){
                         Socket res;
                         try {
                             res = serverSocket.accept();
-                            dispatchNewThread(res);
+                            startCommunicationThread(res);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
-                }
-            }.start();
+                }.start();
+            }
         }
     };
 
-    protected void dispatchNewThread(Socket socket){
+    protected void startCommunicationThread(Socket socket){
         er = new EventReplayer(dec, area2, socket);
         ert = new Thread(er);
         ert.start();
@@ -172,11 +169,12 @@ public class DistributedTextEditor extends JFrame {
             setTitle("Connecting to " + ipaddress.getText() + ":" + portNumber.getText() + "...");
 
             try {
-                Socket socket = new Socket(ipaddress.getText(), Integer.parseInt(portNumber.getText()));
+                socket = new Socket(ipaddress.getText(), Integer.parseInt(portNumber.getText()));
 
                 if(socket.isConnected()){
+                    connected = true;
                     setTitle("Connected to " + ipaddress.getText() + ":" + portNumber.getText() + "!");
-                    dispatchNewThread(socket);
+                    startCommunicationThread(socket);
                 }else{
                     setTitle("Failed to connect to" + ipaddress.getText() + ":" + portNumber.getText() + "!");
                 }
@@ -194,7 +192,24 @@ public class DistributedTextEditor extends JFrame {
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {
             setTitle("Disconnected");
-            // TODO
+            // TODO should destroy all server-client threads, serversockets and sockets.
+            if(listening){
+                try {
+                    serverSocket.close();
+                    listening = false;
+                    ert.interrupt();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }else if(connected){
+                try {
+                    socket.close();
+                    socket = null;
+                    ert.interrupt();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
         }
     };
 
