@@ -90,10 +90,6 @@ public class DistributedTextEditor extends JFrame {
         area1.insert("Example of how to capture stuff from the event queue and replay it in another buffer.\n" +
                 "Try to type and delete stuff in the top area.\n" +
                 "Then figure out how it works.\n", 0);
-
-        er = new EventReplayer(dec, area2);
-        ert = new Thread(er);
-        ert.start();
     }
 
     private KeyListener k1 = new KeyAdapter() {
@@ -132,12 +128,11 @@ public class DistributedTextEditor extends JFrame {
                 e1.printStackTrace();
             }
 
-            setTitle("I'm listening on " + localhost + ":"+port);
-
             // TODO remember to close this socket when dc'ing (server one) - actually all sockets
 
             try {
                 serverSocket = new ServerSocket(port);
+                setTitle("I'm listening on " + localhost + ":"+port);
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
@@ -164,9 +159,9 @@ public class DistributedTextEditor extends JFrame {
     };
 
     protected void dispatchNewThread(Socket socket){
-        System.out.println("dispatched");
-        Thread clientInput = new Thread(new ServerThread(socket, dec));
-        clientInput.start();
+        er = new EventReplayer(dec, area2, socket);
+        ert = new Thread(er);
+        ert.start();
     }
 
 
@@ -179,17 +174,12 @@ public class DistributedTextEditor extends JFrame {
             try {
                 Socket socket = new Socket(ipaddress.getText(), Integer.parseInt(portNumber.getText()));
 
-                if(socket.isConnected()) setTitle("Connected to " + ipaddress.getText() + ":" + portNumber.getText() + "!");
-                else setTitle("Failed to connect to" + ipaddress.getText() + ":" + portNumber.getText() + "!");
-
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-
-                ArrayList<MyTextEvent> eventSend = new ArrayList<MyTextEvent>();
-
-                eventSend.add(new TextInsertEvent(0, "Hello World!"));
-                eventSend.add(new TextInsertEvent(0, "\nWhere are we going?"));
-
-                objectOutputStream.writeObject(eventSend);
+                if(socket.isConnected()){
+                    setTitle("Connected to " + ipaddress.getText() + ":" + portNumber.getText() + "!");
+                    dispatchNewThread(socket);
+                }else{
+                    setTitle("Failed to connect to" + ipaddress.getText() + ":" + portNumber.getText() + "!");
+                }
 
             } catch (IOException e1) {
                 e1.printStackTrace();
