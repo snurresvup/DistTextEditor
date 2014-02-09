@@ -6,10 +6,7 @@ import java.awt.event.*;
 import java.io.*;
 import javax.swing.*;
 import javax.swing.text.*;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 
 public class DistributedTextEditor extends JFrame {
 
@@ -28,6 +25,9 @@ public class DistributedTextEditor extends JFrame {
     private boolean changed = false;
     private boolean connected = false;
     private DocumentEventCapturer dec = new DocumentEventCapturer();
+
+    private ServerSocket server;
+    private Socket socket = null;
 
     public DistributedTextEditor() {
         area1.setFont(new Font("Monospaced",Font.PLAIN,12));
@@ -99,131 +99,57 @@ public class DistributedTextEditor extends JFrame {
         }
     };
 
-    private ServerSocket server;
-    private Socket socket = null;
     Action Listen = new AbstractAction("Listen") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
+
+            // Creating a serversocket
             startServer();
+            // Starting a thread listening for an incoming connection. Once the connection is established the socket is
+            // saved in a field, and then the thread terminates.
             startConnectionListener();
+
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
         }
     };
-
-    private void startServer() {
-        try {
-            if (server != null && server.isBound()) {
-                server.close();
-            }
-            setServer(new ServerSocket(getPortNumber()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void stopServer() {
-        if (server != null && server.isBound()) {
-            try {
-                server.close();
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-        }
-        area1.setEditable(true);
-        server = null;
-    }
-
-    public void startConnectionListener() {
-        Thread listener = new Thread(new ConnectionListener(this));
-        listener.start();
-    }
-
-    public void setSocket(Socket socket) {
-        this.socket = socket;
-    }
-    
-    public void setServer(ServerSocket serverSocket) {
-        this.server = serverSocket;
-    }
-
-    public String getLocalHostAddress() {
-        String address = null;
-        try {
-            InetAddress localhost = InetAddress.getLocalHost();
-            address = localhost.getHostAddress();
-        } catch (UnknownHostException e) {
-            System.err.println("Cannot resolve the Internet address of the local host.");
-            System.err.println(e);
-            System.exit(-1);
-        }
-        return address;
-    }
-
-    public int getPortNumber() {
-        int port;
-        try {
-            port = Integer.parseInt(portNumber.getText());
-            if (port < 0 || port > 65536) {
-                port = 1337; // We default to this portnumber
-            }
-        } catch (NumberFormatException _) {
-            port = 1337; // if there is text in the port field
-        }
-        return port;
-    }
 
     Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
+
+            // Trying to connect to the specified server and port
             connectToServer();
+
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
         }
     };
 
-    private void connectToServer() {
-        String ip = getLocalHostAddress();
-        int port = getPortNumber();
-        try {
-            setTitle("Connecting to " + ip + ":" + port + "...");
-            socket = new Socket(ip, port);
-            resetText();
-            setTitle("Connected to " + ip + ":" + port);
-            connected = true;
-            interruptEventReplayer();
-        } catch (UnknownHostException e) {
-            setTitle("Error connecting to " + ip + ":" + port + "! Maybe you got the wrong ip address?!");
-            e.printStackTrace();
-        } catch (IOException e) {
-            setTitle("Connection refused");
-        }
-    }
-
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {
             setTitle("Disconnected");
+            // We only do anything when we are connected.
             if (connected) {
                 connected = false;
+                // Notifies the event replayer that we are not connected anymore.
                 interruptEventReplayer();
-                resetText();
+                area1.setText("");
                 try {
+                    // Closing the connected socket
                     socket.close();
                 } catch (IOException ioe) {
-                    // Do nothing
+                    // Shhh tell nobody
                 }
             }
+            // In the case where we act as a server. We want to close the server socket and, thereby stop listening
             if (getServer() != null) {
                 stopServer();
             }
         }
     };
-
-    public void resetText() {
-        area1.setText("");
-    }
 
     Action Save = new AbstractAction("Save") {
         public void actionPerformed(ActionEvent e) {
@@ -279,15 +205,108 @@ public class DistributedTextEditor extends JFrame {
 
     public static void main(String[] arg) {
         new DistributedTextEditor();
-        new DistributedTextEditor();
+    }
+
+    private void startServer() {
+        try {
+            // If there is an open server socket, we close it.
+            if (server != null && server.isBound()) {
+                server.close();
+            }
+            // Creates the server socket
+            setServer(new ServerSocket(getPortNumber()));
+        } catch (IOException e) {
+            setTitle("There is already something bound on the port " + getPortNumber());
+        }
+    }
+
+    public void startConnectionListener() {
+        // We start the server listener passing the distributed text editor. In that way the thread can change its
+        // state upon connection and so forth.
+        Thread listener = new Thread(new ConnectionListener(this));
+        listener.start();
+    }
+
+    public void resetText() {
+        area1.setText("");
+    }
+
+    private void stopServer() {
+        if (server != null && server.isBound()) {
+            try {
+                server.close();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+        area1.setEditable(true);
+        server = null;
+    }
+
+    public String getLocalHostAddress() {
+        String address = null;
+        try {
+            InetAddress localhost = InetAddress.getLocalHost();
+            address = localhost.getHostAddress();
+        } catch (UnknownHostException e) {
+            System.err.println("Cannot resolve the Internet address of the local host.");
+            System.err.println(e);
+            System.exit(-1);
+        }
+        return address;
+    }
+
+    public int getPortNumber() {
+        int port;
+        try {
+            port = Integer.parseInt(portNumber.getText());
+            if (port < 0 || port > 65536) {
+                port = 1337; // We default to this portnumber
+            }
+        } catch (NumberFormatException _) {
+            port = 1337; // if there is text in the port field
+        }
+        return port;
+    }
+
+    private void connectToServer() {
+        String ip = getAddress();
+        int port = getPortNumber();
+        try {
+            setTitle("Connecting to " + ip + ":" + port + "...");
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(ip, port), 3000);
+            resetText();
+            setTitle("Connected to " + ip + ":" + port);
+            connected = true;
+            interruptEventReplayer();
+        } catch (UnknownHostException e) {
+            setTitle("Error connecting to " + ip + ":" + port + "! Maybe you got the wrong ip address?!");
+            e.printStackTrace();
+        } catch (IOException e) {
+            setTitle("Connection refused");
+        }
+    }
+
+    private String getAddress() {
+        String address = ipaddress.getText();
+        return address;
     }
 
     public ServerSocket getServer() {
         return server;
     }
 
+    public void setServer(ServerSocket serverSocket) {
+        this.server = serverSocket;
+    }
+
     public Socket getSocket() {
         return socket;
+    }
+
+    public void setSocket(Socket socket) {
+        this.socket = socket;
     }
 
     public void setConnected(boolean connected) {
