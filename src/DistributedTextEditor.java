@@ -106,7 +106,9 @@ public class DistributedTextEditor extends JFrame {
             @Override
             public void run() {
                 try {
+                    serverSocket = new ServerSocket(getPortNumber());
                     Socket socket = serverSocket.accept();
+                    er.newConnection(new ConnectionEvent(socket));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

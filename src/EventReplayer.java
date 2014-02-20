@@ -2,6 +2,8 @@ import com.javafx.tools.doclets.formats.html.SourceToHTMLConverter;
 
 import javax.swing.JTextArea;
 import java.awt.EventQueue;
+import java.net.Socket;
+import java.util.ArrayList;
 
 import static java.lang.Thread.interrupted;
 
@@ -18,6 +20,8 @@ public class EventReplayer implements Runnable {
 
     private DocumentEventCapturer dec;
     private JTextArea area;
+
+    private ArrayList<Socket> connections = new ArrayList<>();
 
     public EventReplayer(DocumentEventCapturer dec, JTextArea area) {
         this.dec = dec;
@@ -37,8 +41,13 @@ public class EventReplayer implements Runnable {
     }
 
     private void sendEvent(MyTextEvent mte) {
+        for(Socket s: connections){
+            //TODO
+        }
+    }
 
-
+    public void newConnection(ConnectionEvent connectionEvent){
+        connections.add(connectionEvent.getSocket());
     }
 
     private void replayEvent(MyTextEvent event){
