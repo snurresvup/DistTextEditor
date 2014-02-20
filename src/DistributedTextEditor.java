@@ -6,6 +6,8 @@ import javax.swing.*;
 import javax.swing.text.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DistributedTextEditor extends JFrame {
 
@@ -182,6 +184,25 @@ public class DistributedTextEditor extends JFrame {
         }
         catch(IOException e) {
         }
+    }
+
+    private int getPortNumber() {
+        int res;
+
+        Pattern pattern = Pattern.compile(
+                "0*([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-6])");
+        Matcher matcher = pattern.matcher(portNumber.getText());
+
+        if(matcher.matches()){
+            try{
+                res = Integer.parseInt(portNumber.getText());
+            }catch (NumberFormatException e){
+                res = 1337;
+            }
+        }else{
+            res = 1337;
+        }
+        return res;
     }
 
     public static void main(String[] arg) {
