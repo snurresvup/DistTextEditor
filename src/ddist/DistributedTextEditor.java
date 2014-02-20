@@ -224,6 +224,12 @@ public class DistributedTextEditor extends JFrame {
         }
     }
 
+    public BigInteger getTime(){
+        synchronized (time){
+            return time;
+        }
+    }
+
     public static void main(String[] arg) {
         new DistributedTextEditor();
     }

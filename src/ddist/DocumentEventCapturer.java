@@ -54,7 +54,7 @@ public class DocumentEventCapturer extends DocumentFilter {
 	
 	/* Queue a copy of the event and then modify the textarea */
         editor.incTime();
-        eventHistory.add(new TextInsertEvent(offset, str));
+        eventHistory.add(new TextInsertEvent(offset, str, editor.getTime()));
         super.insertString(fb, offset, str, a);
     }
 
@@ -62,7 +62,7 @@ public class DocumentEventCapturer extends DocumentFilter {
             throws BadLocationException {
 	/* Queue a copy of the event and then modify the textarea */
         editor.incTime();
-        eventHistory.add(new TextRemoveEvent(offset, length));
+        eventHistory.add(new TextRemoveEvent(offset, length, editor.getTime()));
         super.remove(fb, offset, length);
     }
 
@@ -72,10 +72,12 @@ public class DocumentEventCapturer extends DocumentFilter {
             throws BadLocationException {
 	
 	/* Queue a copy of the event and then modify the text */
+        editor.incTime();
         if (length > 0) {
-            eventHistory.add(new TextRemoveEvent(offset, length));
+            editor.incTime();
+            eventHistory.add(new TextRemoveEvent(offset, length, editor.getTime()));
         }
-        eventHistory.add(new TextInsertEvent(offset, str));
+        eventHistory.add(new TextInsertEvent(offset, str, editor.getTime()));
         super.replace(fb, offset, length, str, a);
     }
 }
