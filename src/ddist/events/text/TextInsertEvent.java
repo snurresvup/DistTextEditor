@@ -13,6 +13,7 @@ public class TextInsertEvent extends MyTextEvent {
 		super(offset);
 		this.text = text;
 	}
+
 	public String getText() { return text; }
 }
 

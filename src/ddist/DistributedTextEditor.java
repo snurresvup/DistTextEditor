@@ -7,6 +7,7 @@ import java.awt.event.*;
 import java.io.*;
 import javax.swing.*;
 import javax.swing.text.*;
+import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.regex.Matcher;
@@ -28,7 +29,8 @@ public class DistributedTextEditor extends JFrame {
     private String currentFile = "Untitled";
     private boolean changed = false;
     private boolean connected = false;
-    private DocumentEventCapturer dec = new DocumentEventCapturer();
+    private BigInteger time = BigInteger.valueOf(0);
+    private DocumentEventCapturer dec = new DocumentEventCapturer(this);
 
     public DistributedTextEditor() {
         area.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -208,6 +210,18 @@ public class DistributedTextEditor extends JFrame {
             res = 1337;
         }
         return res;
+    }
+
+    public void incTime(){
+        synchronized (time){
+            time.add(BigInteger.valueOf(1));
+        }
+    }
+
+    public void setTime(BigInteger newTime){
+        synchronized (time){
+            time = newTime;
+        }
     }
 
     public static void main(String[] arg) {
