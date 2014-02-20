@@ -1,3 +1,5 @@
+package ddist.events.text;
+
 /**
  * 
  * @author Jesper Buus Nielsen
@@ -8,5 +10,5 @@ public class MyTextEvent {
 		this.offset = offset;
 	}
 	private int offset;
-	int getOffset() { return offset; }
+	public int getOffset() { return offset; }
 }

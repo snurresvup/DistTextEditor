@@ -1,3 +1,6 @@
+package ddist;
+
+import ddist.events.ConnectionEvent;
 
 import java.awt.*;
 import java.awt.event.*;

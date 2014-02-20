@@ -1,3 +1,4 @@
+package ddist.events.text;
 
 public class TextRemoveEvent extends MyTextEvent {
 

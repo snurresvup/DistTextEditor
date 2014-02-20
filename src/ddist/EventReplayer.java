@@ -1,4 +1,9 @@
-import com.javafx.tools.doclets.formats.html.SourceToHTMLConverter;
+package ddist;
+
+import ddist.events.ConnectionEvent;
+import ddist.events.text.MyTextEvent;
+import ddist.events.text.TextInsertEvent;
+import ddist.events.text.TextRemoveEvent;
 
 import javax.swing.JTextArea;
 import java.awt.EventQueue;
@@ -9,7 +14,7 @@ import static java.lang.Thread.interrupted;
 
 /**
  *
- * Takes the event recorded by the DocumentEventCapturer and replays
+ * Takes the event recorded by the ddist.DocumentEventCapturer and replays
  * them in a JTextArea. The delay of 1 sec is only to make the individual
  * steps in the reply visible to humans.
  *
@@ -37,7 +42,7 @@ public class EventReplayer implements Runnable {
                 e.printStackTrace();
             }
         }
-        System.out.println("I'm the thread running the EventReplayer, now I die!");
+        System.out.println("I'm the thread running the ddist.EventReplayer, now I die!");
     }
 
     private void sendEvent(MyTextEvent mte) {

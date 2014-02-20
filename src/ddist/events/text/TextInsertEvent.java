@@ -1,3 +1,5 @@
+package ddist.events.text;
+
 /**
  * 
  * @author Jesper Buus Nielsen

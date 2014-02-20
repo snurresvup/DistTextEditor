@@ -1,3 +1,9 @@
+package ddist;
+
+import ddist.events.text.MyTextEvent;
+import ddist.events.text.TextInsertEvent;
+import ddist.events.text.TextRemoveEvent;
+
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -41,14 +47,14 @@ public class DocumentEventCapturer extends DocumentFilter {
 	throws BadLocationException {
 	
 	/* Queue a copy of the event and then modify the textarea */
-	eventHistory.add(new TextInsertEvent(offset, str));		
+	eventHistory.add(new TextInsertEvent(offset, str));
 	super.insertString(fb, offset, str, a);
     }	
     
     public void remove(FilterBypass fb, int offset, int length) 					
 	throws BadLocationException {
 	/* Queue a copy of the event and then modify the textarea */
-	eventHistory.add(new TextRemoveEvent(offset, length));		
+	eventHistory.add(new TextRemoveEvent(offset, length));
 	super.remove(fb, offset, length);
     }
     
