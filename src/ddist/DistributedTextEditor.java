@@ -8,8 +8,10 @@ import java.io.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +31,7 @@ public class DistributedTextEditor extends JFrame {
     private String currentFile = "Untitled";
     private boolean changed = false;
     private boolean connected = false;
-    private BigInteger time = BigInteger.valueOf(0);
+    private BigInteger time = BigInteger.valueOf(0); //TODO change to floate some day!
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
 
     public DistributedTextEditor() {
@@ -99,12 +101,24 @@ public class DistributedTextEditor extends JFrame {
             saveOld();
             area.setText("");
             startListeningThread();
-            setTitle("I'm listening on xxx.xxx.xxx:zzzz");
+            try {
+                String host = getHostAddress();
+                setTitle("I'm listening on " + host + ":"+ getPortNumber());
+            } catch (UnknownHostException e1) {
+                e1.printStackTrace();
+                setTitle("An error was encountered when trying to listen!");
+            }
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
         }
     };
+
+    private String getHostAddress() throws UnknownHostException {
+        String host;
+        host = InetAddress.getLocalHost().getHostAddress();
+        return host;
+    }
 
     private void startListeningThread() {
         Thread listeningThread = new Thread(new Runnable() {
@@ -113,7 +127,7 @@ public class DistributedTextEditor extends JFrame {
                 try {
                     serverSocket = new ServerSocket(getPortNumber());
                     Socket socket = serverSocket.accept();
-                    er.newConnection(new ConnectionEvent(socket));
+                    er.newConnection(socket);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -127,11 +141,31 @@ public class DistributedTextEditor extends JFrame {
             saveOld();
             area.setText("");
             setTitle("Connecting to " + ipaddress.getText() + ":" + portNumber.getText() + "...");
+            startConnectionThread();
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
         }
     };
+
+    private void startConnectionThread() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Socket socket = new Socket(getIpField(), getPortNumber());
+                    er.newConnection(socket);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    private String getIpField() {
+        //TODO jens laver et pattern!
+        return ipaddress.getText();
+    }
 
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {

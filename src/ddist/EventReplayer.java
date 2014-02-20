@@ -7,6 +7,10 @@ import ddist.events.text.TextRemoveEvent;
 
 import javax.swing.JTextArea;
 import java.awt.EventQueue;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 
@@ -26,7 +30,9 @@ public class EventReplayer implements Runnable {
     private DocumentEventCapturer dec;
     private JTextArea area;
 
-    private ArrayList<Socket> connections = new ArrayList<>();
+    private Socket connection;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
 
     public EventReplayer(DocumentEventCapturer dec, JTextArea area) {
         this.dec = dec;
@@ -46,13 +52,17 @@ public class EventReplayer implements Runnable {
     }
 
     private void sendEvent(MyTextEvent mte) {
-        for(Socket s: connections){
-            //TODO
-        }
+        //TODO
     }
 
-    public void newConnection(ConnectionEvent connectionEvent){
-        connections.add(connectionEvent.getSocket());
+    public void newConnection(Socket socket){
+        connection = socket;
+        try {
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
+            inputStream = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void replayEvent(MyTextEvent event){
