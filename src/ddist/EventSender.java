@@ -1,5 +1,6 @@
 package ddist;
 
+import ddist.events.Event;
 import ddist.events.text.MyTextEvent;
 
 import java.io.IOException;
@@ -14,12 +15,12 @@ public class EventSender implements Runnable{
     private DocumentEventCapturer dec;
     private Socket socket;
     private ObjectOutputStream outputStream;
-    private LinkedBlockingQueue queue;
+    private LinkedBlockingQueue<Event> queue;
 
     public EventSender(DocumentEventCapturer dec) {
         this.dec = dec;
         socket = null;
-        queue = new LinkedBlockingQueue();
+        queue = new LinkedBlockingQueue<>();
         receiveLocalEvents();
     }
 
@@ -29,7 +30,7 @@ public class EventSender implements Runnable{
             public void run() {
                 while (!interrupted()) {
                     try {
-                        queue.put(dec.take());
+                        queue.put((Event) dec.take());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -51,15 +52,14 @@ public class EventSender implements Runnable{
     public void run() {
         while (!interrupted()) {
             try {
-                Object event = queue.take();
-                sendEvent(event);
+                sendEvent(queue.take());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void sendEvent(Object event) {
+    private void sendEvent(Event event) {
         try {
             outputStream.writeObject(event);
         } catch (IOException e) {
