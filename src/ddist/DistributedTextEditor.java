@@ -17,25 +17,20 @@ import java.util.regex.Pattern;
 
 public class DistributedTextEditor extends JFrame implements TimeCallBack {
 
-    private final EventManager em;
     private JTextArea area = new JTextArea(40,120);
     private JTextField ipaddress = new JTextField("IP address here");
     private JTextField portNumber = new JTextField("Port number here");
     protected ServerSocket serverSocket;
 
-    private EventReplayer er;
-    private Thread ert;
-
-    private EventSender es;
-    private Thread est;
+    private EventManager em;
+    private Thread emt;
 
     private JFileChooser dialog =
             new JFileChooser(System.getProperty("user.dir"));
 
     private String currentFile = "Untitled";
     private boolean changed = false;
-    private boolean connected = false;
-    private Double time = new Double(0);
+    private Double time = 0.0;
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
 
     public DistributedTextEditor() {
@@ -87,14 +82,9 @@ public class DistributedTextEditor extends JFrame implements TimeCallBack {
                 "Try to type and delete stuff in the top area.\n" +
                 "Then figure out how it works.\n", 0);
 
-        er = new EventReplayer(area);
-
-        es = new EventSender(dec);
-
-        em = new EventManager(er, es, this);
-        est = new Thread(es);
-        est.start();
-
+        em = new EventManager(area, dec, this);
+        emt = new Thread(em);
+        emt.start();
     }
 
     private KeyListener k1 = new KeyAdapter() {
@@ -136,7 +126,7 @@ public class DistributedTextEditor extends JFrame implements TimeCallBack {
                 try {
                     serverSocket = new ServerSocket(getPortNumber());
                     Socket socket = serverSocket.accept();
-                    em.newConnection(socket);
+                    em.queueEvent(new ConnectionEvent(socket, time, true));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -163,7 +153,7 @@ public class DistributedTextEditor extends JFrame implements TimeCallBack {
             public void run() {
                 try {
                     Socket socket = new Socket(getIpField(), getPortNumber());
-                    em.newConnection(socket);
+                    em.queueEvent(new ConnectionEvent(socket, time, false));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

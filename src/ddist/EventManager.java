@@ -2,8 +2,10 @@ package ddist;
 
 import ddist.events.ConnectionEvent;
 import ddist.events.Event;
+import ddist.events.InitialSetupEvent;
 import ddist.events.text.TextEvent;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -14,20 +16,24 @@ import static java.lang.Thread.interrupted;
 
 public class EventManager implements Runnable {
 
+    private static final double TIME_OFFSET = 0.0001 ;
     private LinkedBlockingQueue<Event> events = new LinkedBlockingQueue<>();
 
-    private final EventSender eventSender;
+    private EventSender eventSender;
+    private Thread est;
     private EventReplayer eventReplayer;
+    private JTextArea area;
+    private DocumentEventCapturer dec;
     private TimeCallBack time;
 
     private Socket connection;
     private ObjectInputStream inputStream;
-    private ObjectOutputStream outputStream;
+    private double currentClientOffset = 0;
 
 
-    public EventManager(EventReplayer eventReplayer, EventSender eventSender, TimeCallBack time) {
-        this.eventReplayer = eventReplayer;
-        this.eventSender = eventSender;
+    public EventManager(JTextArea area, DocumentEventCapturer dec, TimeCallBack time) {
+        this.area = area;
+        this.dec = dec;
         this.time = time;
     }
 
@@ -79,33 +85,21 @@ public class EventManager implements Runnable {
             TextEvent textEvent = (TextEvent)event;
             handleTextEvent(textEvent);
         } else if(event instanceof ConnectionEvent) {
-            ConnectionEvent connectionEvent = (ConnectionEvent)event;
+            ConnectionEvent connectionEvent = (ConnectionEvent) event;
             handleConnectionEvent(connectionEvent);
         }
     }
 
     private void handleConnectionEvent(ConnectionEvent event) {
         connection = event.getSocket();
-
-    }
-
-    private Event receiveEvent() {
-        if(connection != null){
-            Object input = null;
-            try {
-                input = inputStream.readObject();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            if(input instanceof Event) {
-                final Event event = (Event)input;
-                return event;
-            }
+        eventReplayer = new EventReplayer(area);
+        eventSender = new EventSender(dec);
+        est = new Thread(eventSender);
+        est.start();
+        if (event.isServer()) {
+            currentClientOffset += TIME_OFFSET;
+            eventSender.queueEvent(new InitialSetupEvent(area.getText(), time.getTime()+currentClientOffset));
         }
-
-        return null;
     }
 
     private void handleTextEvent(TextEvent event) {
@@ -115,19 +109,5 @@ public class EventManager implements Runnable {
 
         }
 
-    }
-
-    public void newConnection(Socket socket){
-        connection = socket;
-        try {
-            inputStream = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-            try {
-                if(connection != null){
-                    connection.close();
-                }
-            } catch (IOException e1) {}
-        }
     }
 }

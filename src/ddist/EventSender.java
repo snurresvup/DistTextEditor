@@ -37,11 +37,10 @@ public class EventSender implements Runnable{
         }).start();
     }
 
-    public void newConnection(Socket socket) {
-        this.socket = socket;
+    public void queueEvent(Event event) {
         try {
-            outputStream = new ObjectOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
+            queue.put(event);
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
