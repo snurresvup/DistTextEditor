@@ -1,6 +1,6 @@
 package ddist;
 
-import ddist.events.text.MyTextEvent;
+import ddist.events.text.TextEvent;
 import ddist.events.text.TextInsertEvent;
 import ddist.events.text.TextRemoveEvent;
 
@@ -32,7 +32,7 @@ public class DocumentEventCapturer extends DocumentFilter {
      *    empty, then take() will wait until new elements arrive, which is what
      *    we want, as we then don't need to keep asking until there are new elements.
      */
-    protected LinkedBlockingQueue<MyTextEvent> eventHistory = new LinkedBlockingQueue<MyTextEvent>();
+    protected LinkedBlockingQueue<TextEvent> eventHistory = new LinkedBlockingQueue<TextEvent>();
 
     public DocumentEventCapturer(DistributedTextEditor editor) {
         this.editor = editor;
@@ -44,7 +44,7 @@ public class DocumentEventCapturer extends DocumentFilter {
      *
      * @return Head of the recorded event queue. 
      */
-    MyTextEvent take() throws InterruptedException {
+    TextEvent take() throws InterruptedException {
         return eventHistory.take();
     }
 

@@ -7,11 +7,11 @@ import java.math.BigInteger;
  * @author Jesper Buus Nielsen
  *
  */
-public class TextInsertEvent extends MyTextEvent {
+public class TextInsertEvent extends TextEvent {
 
 	private String text;
 	
-	public TextInsertEvent(int offset, String text, BigInteger time) {
+	public TextInsertEvent(int offset, String text, Double time) {
 		super(offset, time);
 		this.text = text;
 	}

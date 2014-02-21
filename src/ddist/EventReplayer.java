@@ -1,20 +1,10 @@
 package ddist;
-
-import ddist.events.ConnectionEvent;
-import ddist.events.text.MyTextEvent;
+import ddist.events.text.TextEvent;
 import ddist.events.text.TextInsertEvent;
 import ddist.events.text.TextRemoveEvent;
 
 import javax.swing.JTextArea;
 import java.awt.EventQueue;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.util.ArrayList;
-
-import static java.lang.Thread.interrupted;
 
 /**
  *
@@ -25,47 +15,15 @@ import static java.lang.Thread.interrupted;
  * @author Jesper Buus Nielsen
  *
  */
-public class EventReplayer implements Runnable {
+public class EventReplayer{
 
-    private DocumentEventCapturer dec;
     private JTextArea area;
 
-    private Socket connection;
-    private ObjectOutputStream outputStream;
-    private ObjectInputStream inputStream;
-
-    public EventReplayer(DocumentEventCapturer dec, JTextArea area) {
-        this.dec = dec;
+    public EventReplayer(JTextArea area) {
         this.area = area;
     }
 
-    public void run() {
-        while (!interrupted()) {
-            try {
-                MyTextEvent mte = dec.take();
-                sendEvent(mte);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        System.out.println("I'm the thread running the ddist.EventReplayer, now I die!");
-    }
-
-    private void sendEvent(MyTextEvent mte) {
-        //TODO
-    }
-
-    public void newConnection(Socket socket){
-        connection = socket;
-        try {
-            outputStream = new ObjectOutputStream(socket.getOutputStream());
-            inputStream = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void replayEvent(MyTextEvent event){
+    public void replayEvent(TextEvent event){
         if (event instanceof TextInsertEvent) {
             final TextInsertEvent tie = (TextInsertEvent)event;
             EventQueue.invokeLater(new Runnable() {

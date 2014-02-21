@@ -15,8 +15,9 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DistributedTextEditor extends JFrame {
+public class DistributedTextEditor extends JFrame implements TimeCallBack {
 
+    private final EventManager em;
     private JTextArea area = new JTextArea(40,120);
     private JTextField ipaddress = new JTextField("IP address here");
     private JTextField portNumber = new JTextField("Port number here");
@@ -34,7 +35,7 @@ public class DistributedTextEditor extends JFrame {
     private String currentFile = "Untitled";
     private boolean changed = false;
     private boolean connected = false;
-    private BigInteger time = BigInteger.valueOf(0); //TODO change to floate some day!
+    private Double time = new Double(0);
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
 
     public DistributedTextEditor() {
@@ -86,11 +87,11 @@ public class DistributedTextEditor extends JFrame {
                 "Try to type and delete stuff in the top area.\n" +
                 "Then figure out how it works.\n", 0);
 
-        er = new EventReplayer(dec, area);
-        ert = new Thread(er);
-        ert.start();
+        er = new EventReplayer(area);
 
         es = new EventSender(dec);
+
+        em = new EventManager(er, es, this);
         est = new Thread(es);
         est.start();
 
@@ -135,7 +136,7 @@ public class DistributedTextEditor extends JFrame {
                 try {
                     serverSocket = new ServerSocket(getPortNumber());
                     Socket socket = serverSocket.accept();
-                    er.newConnection(socket);
+                    em.newConnection(socket);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -162,7 +163,7 @@ public class DistributedTextEditor extends JFrame {
             public void run() {
                 try {
                     Socket socket = new Socket(getIpField(), getPortNumber());
-                    er.newConnection(socket);
+                    em.newConnection(socket);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -256,17 +257,17 @@ public class DistributedTextEditor extends JFrame {
 
     public void incTime(){
         synchronized (time){
-            time.add(BigInteger.valueOf(1));
+            time++;
         }
     }
 
-    public void setTime(BigInteger newTime){
+    public void setTime(double newTime){
         synchronized (time){
             time = newTime;
         }
     }
 
-    public BigInteger getTime(){
+    public double getTime(){
         synchronized (time){
             return time;
         }

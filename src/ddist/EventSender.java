@@ -1,8 +1,6 @@
 package ddist;
 
 import ddist.events.Event;
-import ddist.events.text.MyTextEvent;
-
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -50,6 +48,7 @@ public class EventSender implements Runnable{
 
     @Override
     public void run() {
+        receiveLocalEvents();
         while (!interrupted()) {
             try {
                 sendEvent(queue.take());
