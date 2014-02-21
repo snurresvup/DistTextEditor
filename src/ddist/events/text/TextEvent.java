@@ -2,12 +2,13 @@ package ddist.events.text;
 
 import ddist.events.Event;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 /**
  * @author Jesper Buus Nielsen
  */
-public abstract class TextEvent implements Event{
+public abstract class TextEvent implements Event {
     private double timestamp;
     private int offset;
 

@@ -15,9 +15,14 @@ public class EventSender implements Runnable{
     private ObjectOutputStream outputStream;
     private LinkedBlockingQueue<Event> queue;
 
-    public EventSender(DocumentEventCapturer dec) {
+    public EventSender(DocumentEventCapturer dec, Socket socket) {
         this.dec = dec;
-        socket = null;
+        this.socket = socket;
+        try {
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         queue = new LinkedBlockingQueue<>();
         receiveLocalEvents();
     }
@@ -28,7 +33,7 @@ public class EventSender implements Runnable{
             public void run() {
                 while (!interrupted()) {
                     try {
-                        queue.put((Event) dec.take());
+                        queue.put(dec.take());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

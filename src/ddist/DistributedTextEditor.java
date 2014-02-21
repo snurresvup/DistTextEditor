@@ -7,7 +7,6 @@ import java.awt.event.*;
 import java.io.*;
 import javax.swing.*;
 import javax.swing.text.*;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,7 +14,7 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DistributedTextEditor extends JFrame implements TimeCallBack {
+public class DistributedTextEditor extends JFrame implements CallBack {
 
     private JTextArea area = new JTextArea(40,120);
     private JTextField ipaddress = new JTextField("IP address here");
@@ -32,6 +31,7 @@ public class DistributedTextEditor extends JFrame implements TimeCallBack {
     private boolean changed = false;
     private Double time = 0.0;
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
+    private double id;
 
     public DistributedTextEditor() {
         area.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -98,7 +98,9 @@ public class DistributedTextEditor extends JFrame implements TimeCallBack {
     Action Listen = new AbstractAction("Listen") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
+            dec.toggleFilter();
             area.setText("");
+            dec.toggleFilter();
             startListeningThread();
             try {
                 String host = getHostAddress();
@@ -249,6 +251,21 @@ public class DistributedTextEditor extends JFrame implements TimeCallBack {
         synchronized (time){
             time++;
         }
+    }
+
+    @Override
+    public void setTitleOfWindow(String titleOfWindow) {
+        setTitle(titleOfWindow);
+    }
+
+    @Override
+    public void setID(double id) {
+        this.id = id;
+    }
+
+    @Override
+    public double getID() {
+        return id;
     }
 
     public void setTime(double newTime){

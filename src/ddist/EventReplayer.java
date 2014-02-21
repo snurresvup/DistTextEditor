@@ -18,9 +18,11 @@ import java.awt.EventQueue;
 public class EventReplayer{
 
     private JTextArea area;
+    private DocumentEventCapturer dec;
 
-    public EventReplayer(JTextArea area) {
+    public EventReplayer(JTextArea area, DocumentEventCapturer dec) {
         this.area = area;
+        this.dec = dec;
     }
 
     public void replayEvent(TextEvent event){
@@ -29,7 +31,9 @@ public class EventReplayer{
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     try {
+                        dec.toggleFilter();
                         area.insert(tie.getText(), tie.getOffset());
+                        dec.toggleFilter();
                     } catch (Exception e) {
                         System.err.println(e);
 				    /* We catch all axceptions, as an uncaught exception would make the
@@ -43,7 +47,9 @@ public class EventReplayer{
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     try {
+                        dec.toggleFilter();
                         area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
+                        dec.toggleFilter();
                     } catch (Exception e) {
                         System.err.println(e);
 				    /* We catch all axceptions, as an uncaught exception would make the

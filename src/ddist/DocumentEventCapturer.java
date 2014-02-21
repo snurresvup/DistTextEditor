@@ -33,6 +33,7 @@ public class DocumentEventCapturer extends DocumentFilter {
      *    we want, as we then don't need to keep asking until there are new elements.
      */
     protected LinkedBlockingQueue<TextEvent> eventHistory = new LinkedBlockingQueue<TextEvent>();
+    private boolean filtering = true;
 
     public DocumentEventCapturer(DistributedTextEditor editor) {
         this.editor = editor;
@@ -53,16 +54,20 @@ public class DocumentEventCapturer extends DocumentFilter {
             throws BadLocationException {
 	
 	/* Queue a copy of the event and then modify the textarea */
-        editor.incTime();
-        eventHistory.add(new TextInsertEvent(offset, str, editor.getTime()));
+        if(filtering){
+            editor.incTime();
+            eventHistory.add(new TextInsertEvent(offset, str, editor.getTime()));
+        }
         super.insertString(fb, offset, str, a);
     }
 
     public void remove(FilterBypass fb, int offset, int length)
             throws BadLocationException {
 	/* Queue a copy of the event and then modify the textarea */
-        editor.incTime();
-        eventHistory.add(new TextRemoveEvent(offset, length, editor.getTime()));
+        if(filtering){
+            editor.incTime();
+            eventHistory.add(new TextRemoveEvent(offset, length, editor.getTime()));
+        }
         super.remove(fb, offset, length);
     }
 
@@ -72,12 +77,18 @@ public class DocumentEventCapturer extends DocumentFilter {
             throws BadLocationException {
 	
 	/* Queue a copy of the event and then modify the text */
-        editor.incTime();
-        if (length > 0) {
+        if(filtering){
             editor.incTime();
-            eventHistory.add(new TextRemoveEvent(offset, length, editor.getTime()));
+            if (length > 0) {
+                editor.incTime();
+                eventHistory.add(new TextRemoveEvent(offset, length, editor.getTime()));
+            }
+            eventHistory.add(new TextInsertEvent(offset, str, editor.getTime()));
         }
-        eventHistory.add(new TextInsertEvent(offset, str, editor.getTime()));
         super.replace(fb, offset, length, str, a);
+    }
+
+    public synchronized void toggleFilter(){
+        filtering = !filtering;
     }
 }
