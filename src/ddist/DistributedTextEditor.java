@@ -25,6 +25,9 @@ public class DistributedTextEditor extends JFrame {
     private EventReplayer er;
     private Thread ert;
 
+    private EventSender es;
+    private Thread est;
+
     private JFileChooser dialog =
             new JFileChooser(System.getProperty("user.dir"));
 
@@ -86,6 +89,11 @@ public class DistributedTextEditor extends JFrame {
         er = new EventReplayer(dec, area);
         ert = new Thread(er);
         ert.start();
+
+        es = new EventSender(dec);
+        est = new Thread(es);
+        est.start();
+
     }
 
     private KeyListener k1 = new KeyAdapter() {
