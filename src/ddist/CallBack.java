@@ -10,5 +10,6 @@ public interface CallBack {
     public double getID();
     public void setConnect(boolean enabled);
     public void setDisconnect(boolean enabled);
-    void setListen(boolean enabled);
+    public void setListen(boolean enabled);
+    public void setStopListening(boolean b);
 }

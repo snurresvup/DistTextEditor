@@ -135,6 +135,7 @@ public class EventManager implements Runnable {
         callback.setConnect(false);
         callback.setDisconnect(true);
         callback.setListen(false);
+        callback.setStopListening(false);
         if (event.isServer()) {
             callback.setID(0);
             currentClientOffset += TIME_OFFSET;

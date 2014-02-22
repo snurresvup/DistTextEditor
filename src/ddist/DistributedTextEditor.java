@@ -171,6 +171,10 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         Listen.setEnabled(enabled);
     }
 
+    public void setStopListening(boolean enabled) {
+        StopListening.setEnabled(enabled);
+    }
+
     private void startConnectionThread() {
         new Thread(new Runnable() {
             @Override
