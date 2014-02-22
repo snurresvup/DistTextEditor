@@ -53,9 +53,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         JMenuBar JMB = new JMenuBar();
         setJMenuBar(JMB);
         JMenu file = new JMenu("File");
-        JMenu edit = new JMenu("Edit");
         JMB.add(file);
-        JMB.add(edit);
 
         file.add(Listen);
         file.add(Connect);
@@ -64,11 +62,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         file.add(Save);
         file.add(SaveAs);
         file.add(Quit);
-
-        edit.add(Copy);
-        edit.add(Paste);
-        edit.getItem(0).setText("Copy");
-        edit.getItem(1).setText("Paste");
 
         Save.setEnabled(false);
         SaveAs.setEnabled(false);
@@ -196,11 +189,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
             System.exit(0);
         }
     };
-
-    ActionMap m = area.getActionMap();
-
-    Action Copy = m.get(DefaultEditorKit.copyAction);
-    Action Paste = m.get(DefaultEditorKit.pasteAction);
 
     private void saveFileAs() {
         if(dialog.showSaveDialog(null)==JFileChooser.APPROVE_OPTION)
