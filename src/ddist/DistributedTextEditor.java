@@ -189,12 +189,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         }).start();
     }
 
-    private String getIpField() {
-        //TODO jens laver et pattern!
-        //return ipaddress.getText();
-        return "localhost";
-    }
-
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {
             setTitle("Disconnected");
@@ -271,6 +265,20 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         }else{
             res = 1337;
         }
+        return res;
+    }
+
+    private String getIpField(){
+        String res;
+        Pattern IPv4 = Pattern.compile("^(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}$");
+        Matcher matcher = IPv4.matcher(ipaddress.getText());
+
+        if(matcher.matches()){
+            res = ipaddress.getText();
+        }else {
+            res = "localhost";
+        }
+
         return res;
     }
 
