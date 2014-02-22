@@ -14,6 +14,7 @@ public class EventSender implements Runnable{
     private Socket socket;
     private ObjectOutputStream outputStream;
     private LinkedBlockingQueue<Event> queue;
+    private boolean receiving = true;
 
     public EventSender(DocumentEventCapturer dec, Socket socket) {
         this.dec = dec;
@@ -31,7 +32,7 @@ public class EventSender implements Runnable{
         new Thread(new Runnable() {
             @Override
             public void run() {
-                while (!interrupted()) {
+                while (receiving) {
                     try {
                         queue.put(dec.take());
                     } catch (InterruptedException e) {
@@ -53,7 +54,7 @@ public class EventSender implements Runnable{
     @Override
     public void run() {
         receiveLocalEvents();
-        while (!interrupted()) {
+        while (receiving) {
             try {
                 sendEvent(queue.take());
             } catch (InterruptedException e) {
@@ -65,6 +66,15 @@ public class EventSender implements Runnable{
     private void sendEvent(Event event) {
         try {
             outputStream.writeObject(event);
+        } catch (IOException e) {
+            // e.printStackTrace();
+        }
+    }
+
+    public void close() {
+        try {
+            receiving = false;
+            outputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

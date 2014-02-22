@@ -1,6 +1,7 @@
 package ddist;
 
 import ddist.events.ConnectionEvent;
+import ddist.events.DisconnectEvent;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -32,6 +33,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     private Double time = 0.0;
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
     private double id;
+    private boolean server = false;
 
     public DistributedTextEditor() {
         area.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -76,9 +78,11 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         area.addKeyListener(k1);
         setTitle("Disconnected");
         setVisible(true);
+        dec.setFilter(false);
         area.insert("Example of how to capture stuff from the event queue and replay it in another buffer.\n" +
                 "Try to type and delete stuff in the top area.\n" +
                 "Then figure out how it works.\n", 0);
+        dec.setFilter(true);
 
         em = new EventManager(area, dec, this);
         emt = new Thread(em);
@@ -96,9 +100,10 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action Listen = new AbstractAction("Listen") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
-            dec.toggleFilter();
+            server = true;
+            dec.setFilter(false);
             area.setText("");
-            dec.toggleFilter();
+            dec.setFilter(true);
             startListeningThread();
             try {
                 String host = getHostAddress();
@@ -119,6 +124,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action StopListening = new AbstractAction("Stop Listening") {
         @Override
         public void actionPerformed(ActionEvent e) {
+            server = false;
 
             Listen.setEnabled(true);
             StopListening.setEnabled(false);
@@ -138,7 +144,11 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                 try {
                     serverSocket = new ServerSocket(getPortNumber());
                     Socket socket = serverSocket.accept();
+
                     em.queueEvent(new ConnectionEvent(socket, time, true));
+
+                    serverSocket.close();
+                    serverSocket = null;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -192,7 +202,9 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {
             setTitle("Disconnected");
-            // TODO
+
+            em.queueEvent(new DisconnectEvent());
+
             Connect.setEnabled(true);
             Disconnect.setEnabled(false);
             if (!StopListening.isEnabled()) {
@@ -200,6 +212,11 @@ public class DistributedTextEditor extends JFrame implements CallBack {
             }
         }
     };
+
+    @Override
+    public boolean isServer() {
+        return server;
+    }
 
     Action Save = new AbstractAction("Save") {
         public void actionPerformed(ActionEvent e) {

@@ -31,9 +31,9 @@ public class EventReplayer{
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     try {
-                        dec.toggleFilter();
+                        dec.setFilter(false);
                         area.insert(tie.getText(), tie.getOffset());
-                        dec.toggleFilter();
+                        dec.setFilter(true);
                     } catch (Exception e) {
                         System.err.println(e);
 				    /* We catch all axceptions, as an uncaught exception would make the
@@ -47,9 +47,9 @@ public class EventReplayer{
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     try {
-                        dec.toggleFilter();
+                        dec.setFilter(false);
                         area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
-                        dec.toggleFilter();
+                        dec.setFilter(true);
                     } catch (Exception e) {
                         System.err.println(e);
 				    /* We catch all axceptions, as an uncaught exception would make the

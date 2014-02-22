@@ -88,7 +88,7 @@ public class DocumentEventCapturer extends DocumentFilter {
         super.replace(fb, offset, length, str, a);
     }
 
-    public synchronized void toggleFilter(){
-        filtering = !filtering;
+    public synchronized void setFilter(boolean enabled){
+        filtering = enabled;
     }
 }

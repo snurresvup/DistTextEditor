@@ -12,4 +12,5 @@ public interface CallBack {
     public void setDisconnect(boolean enabled);
     public void setListen(boolean enabled);
     public void setStopListening(boolean b);
+    public boolean isServer();
 }

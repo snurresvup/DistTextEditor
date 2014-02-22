@@ -1,17 +1,11 @@
 package ddist;
 
-import ddist.events.ClearTextEvent;
-import ddist.events.ConnectionEvent;
-import ddist.events.Event;
-import ddist.events.InitialSetupEvent;
+import ddist.events.*;
 import ddist.events.text.TextEvent;
 import ddist.events.text.TextInsertEvent;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -54,15 +48,18 @@ public class EventManager implements Runnable {
 
     private void startEventReceiverThread() {
         new Thread(new Runnable() {
+            boolean receiving = true;
             @Override
             public void run() {
-                while (!interrupted()){
+                while (receiving){
                     if(connection != null && connection.isConnected()){
                         Object input = null;
                         try {
                             input = inputStream.readObject();
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            queueEvent(new DisconnectEvent());
+                            receiving = false;
+                            break;
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                         }
@@ -103,13 +100,33 @@ public class EventManager implements Runnable {
         } else if(event instanceof ClearTextEvent) {
             System.out.println("clearevent");
             clearTextArea();
+        } else if(event instanceof DisconnectEvent) {
+            handleDisconnectEvent();
+        }
+    }
+
+    private void handleDisconnectEvent() {
+        try {
+            eventSender.close();
+            inputStream.close();
+            connection.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        callback.setTitleOfWindow("Disconnected");
+        callback.setDisconnect(false);
+        if (callback.isServer()) {
+            callback.setStopListening(true);
+        } else {
+            callback.setConnect(true);
+            callback.setListen(true);
         }
     }
 
     private void clearTextArea() {
-        dec.toggleFilter();
+        dec.setFilter(false);
         area.setText("");
-        dec.toggleFilter();
+        dec.setFilter(true);
     }
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
@@ -121,6 +138,7 @@ public class EventManager implements Runnable {
 
     private void handleConnectionEvent(ConnectionEvent event) {
         connection = event.getSocket();
+        events.clear();
         try {
             eventSender = new EventSender(dec, connection);
             inputStream = new ObjectInputStream(connection.getInputStream());
