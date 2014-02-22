@@ -17,6 +17,10 @@ import java.util.regex.Pattern;
 
 public class DistributedTextEditor extends JFrame implements CallBack {
 
+    public JTextArea getArea() {
+        return area;
+    }
+
     private JTextArea area = new JTextArea(40,120);
     private JTextField ipaddress = new JTextField("IP address here");
     private JTextField portNumber = new JTextField("Port number here");

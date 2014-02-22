@@ -66,6 +66,8 @@ public class DocumentEventCapturer extends DocumentFilter {
 	/* Queue a copy of the event and then modify the textarea */
         if(filtering){
             editor.incTime();
+            TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, editor.getTime());
+            removeEvent.setText(editor.getArea().getText().substring(offset, offset+length));
             eventHistory.add(new TextRemoveEvent(offset, length, editor.getTime()));
         }
         super.remove(fb, offset, length);

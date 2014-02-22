@@ -1,9 +1,13 @@
 package ddist;
 
 import ddist.events.Event;
+import ddist.events.text.TextEvent;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.lang.Thread.interrupted;
@@ -11,13 +15,15 @@ import static java.lang.Thread.interrupted;
 public class EventSender implements Runnable{
 
     private DocumentEventCapturer dec;
+    private SortedMap<Double, TextEvent> log;
     private Socket socket;
     private ObjectOutputStream outputStream;
     private LinkedBlockingQueue<Event> queue;
     private boolean receiving = true;
 
-    public EventSender(DocumentEventCapturer dec, Socket socket) {
+    public EventSender(DocumentEventCapturer dec, SortedMap<Double, TextEvent> log, Socket socket) {
         this.dec = dec;
+        this.log = log;
         this.socket = socket;
         try {
             outputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -34,7 +40,11 @@ public class EventSender implements Runnable{
             public void run() {
                 while (receiving) {
                     try {
-                        queue.put(dec.take());
+                        Event event = dec.take();
+                        if(event instanceof TextEvent){
+                            log.put(event.getTimestamp(), (TextEvent)event);
+                        }
+                        queue.put(event);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

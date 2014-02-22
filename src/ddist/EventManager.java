@@ -1,12 +1,14 @@
 package ddist;
 
 import ddist.events.*;
-import ddist.events.text.TextEvent;
-import ddist.events.text.TextInsertEvent;
+import ddist.events.text.*;
 
 import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.lang.Thread.interrupted;
@@ -22,6 +24,8 @@ public class EventManager implements Runnable {
     private JTextArea area;
     private DocumentEventCapturer dec;
     private CallBack callback;
+
+    private SortedMap<Double, TextEvent> log = Collections.synchronizedSortedMap(new TreeMap<Double, TextEvent>());
 
     private Socket connection;
     private ObjectInputStream inputStream;
@@ -140,7 +144,7 @@ public class EventManager implements Runnable {
         connection = event.getSocket();
         events.clear();
         try {
-            eventSender = new EventSender(dec, connection);
+            eventSender = new EventSender(dec, log, connection);
             inputStream = new ObjectInputStream(connection.getInputStream());
             est = new Thread(eventSender);
             est.start();
@@ -148,7 +152,7 @@ public class EventManager implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        eventReplayer = new EventReplayer(area, dec);
+        eventReplayer = new EventReplayer(area, dec, log);
         callback.setTitleOfWindow("Connected!!!");
         callback.setConnect(false);
         callback.setDisconnect(true);
@@ -162,11 +166,31 @@ public class EventManager implements Runnable {
     }
 
     private void handleTextEvent(TextEvent event) {
-        eventReplayer.replayEvent(event);
         if(callback.getTime() < event.getTimestamp()) {
             System.out.println(callback.getTime() + " < " + event.getTimestamp());
+            log.put(event.getTimestamp(), event);
+            eventReplayer.replayEvent(event);
         } else if(callback.getTime() > event.getTimestamp()) {
             System.out.println(callback.getTime() + " > " + event.getTimestamp());
+            SortedMap<Double, TextEvent> rollbackMap = log.tailMap(event.getTimestamp());
+            callback.incTime();
+            RollbackEvent rollbackEvent = new RollbackEvent(event.getOffset(), rollbackMap, callback.getTime());
+            eventReplayer.replayEvent(rollbackEvent);
+            updateOffsets(rollbackMap, event);
+            ClusterEvent clusterEvent = new ClusterEvent(event.getOffset(), rollbackMap, 0.0);
+            eventReplayer.replayEvent(clusterEvent);
+        }
+    }
+
+    private void updateOffsets(SortedMap<Double, TextEvent> rollbackMap, TextEvent event) {
+        if(event instanceof TextRemoveEvent) {
+            for(TextEvent e: rollbackMap.values()) {
+                e.setOffset(e.getOffset() - ((TextRemoveEvent) event).getLength());
+            }
+        } else if(event instanceof  TextInsertEvent) {
+            for(TextEvent e: rollbackMap.values()) {
+                e.setOffset(e.getOffset() + ((TextInsertEvent) event).getText().length());
+            }
         }
     }
 }
