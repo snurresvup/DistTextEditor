@@ -14,6 +14,7 @@ public abstract class TextEvent implements Event {
 
     TextEvent(int offset, Double timestamp) {
         this.offset = offset;
+        this.timestamp = timestamp;
     }
 
     public int getOffset() {

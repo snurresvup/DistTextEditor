@@ -146,9 +146,9 @@ public class EventManager implements Runnable {
     private void handleTextEvent(TextEvent event) {
         eventReplayer.replayEvent(event);
         if(callback.getTime() < event.getTimestamp()) {
-            eventReplayer.replayEvent(event);
+            System.out.println(callback.getTime() + " < " + event.getTimestamp());
         } else if(callback.getTime() > event.getTimestamp()) {
-
+            System.out.println(callback.getTime() + " > " + event.getTimestamp());
         }
     }
 }
