@@ -53,16 +53,21 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         JMenuBar JMB = new JMenuBar();
         setJMenuBar(JMB);
         JMenu file = new JMenu("File");
+        JMenu con = new JMenu("Connection");
         JMB.add(file);
+        JMB.add(con);
 
-        file.add(Listen);
-        file.add(Connect);
-        file.add(Disconnect);
-        file.addSeparator();
+        con.add(Listen);
+        con.add(StopListening);
+        con.addSeparator();
+        con.add(Connect);
+        con.add(Disconnect);
         file.add(Save);
         file.add(SaveAs);
         file.add(Quit);
 
+        Disconnect.setEnabled(false);
+        StopListening.setEnabled(false);
         Save.setEnabled(false);
         SaveAs.setEnabled(false);
 
@@ -102,9 +107,21 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                 e1.printStackTrace();
                 setTitle("An error was encountered when trying to listen!");
             }
+            Listen.setEnabled(false);
+            StopListening.setEnabled(true);
+            Connect.setEnabled(false);
             changed = false;
             Save.setEnabled(false);
             SaveAs.setEnabled(false);
+        }
+    };
+
+    Action StopListening = new AbstractAction("Stop Listening") {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            Listen.setEnabled(true);
+            StopListening.setEnabled(false);
         }
     };
 
@@ -142,6 +159,18 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         }
     };
 
+    public void setConnect(boolean enabled) {
+        Connect.setEnabled(enabled);
+    }
+
+    public void setDisconnect(boolean enabled) {
+        Disconnect.setEnabled(enabled);
+    }
+
+    public void setListen(boolean enabled) {
+        Listen.setEnabled(enabled);
+    }
+
     private void startConnectionThread() {
         new Thread(new Runnable() {
             @Override
@@ -165,6 +194,11 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         public void actionPerformed(ActionEvent e) {
             setTitle("Disconnected");
             // TODO
+            Connect.setEnabled(true);
+            Disconnect.setEnabled(false);
+            if (!StopListening.isEnabled()) {
+                Listen.setEnabled(true);
+            }
         }
     };
 
@@ -269,6 +303,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     }
 
     public static void main(String[] arg) {
+        new DistributedTextEditor();
         new DistributedTextEditor();
     }
 

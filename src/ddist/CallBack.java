@@ -8,4 +8,7 @@ public interface CallBack {
     public void setTitleOfWindow(String titleOfWindow);
     public void setID(double id);
     public double getID();
+    public void setConnect(boolean enabled);
+    public void setDisconnect(boolean enabled);
+    void setListen(boolean enabled);
 }
