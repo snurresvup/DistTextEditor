@@ -187,7 +187,8 @@ public class DistributedTextEditor extends JFrame implements CallBack {
 
     private String getIpField() {
         //TODO jens laver et pattern!
-        return ipaddress.getText();
+        //return ipaddress.getText();
+        return "localhost";
     }
 
     Action Disconnect = new AbstractAction("Disconnect") {
