@@ -304,7 +304,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
 
     public static void main(String[] arg) {
         new DistributedTextEditor();
-        new DistributedTextEditor();
     }
 
 }
