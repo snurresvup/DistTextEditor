@@ -1,7 +1,6 @@
 package ddist;
 
 import ddist.events.ConnectionEvent;
-import ddist.events.text.*;
 import ddist.events.text.TextEvent;
 
 import java.awt.*;
@@ -41,6 +40,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
     private double id;
     private boolean server = false;
+    private Thread listeningThread;
 
     public DistributedTextEditor() {
         area.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -114,6 +114,11 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         public void actionPerformed(ActionEvent e) {
             server = false;
             setTitle("Disconnected");
+            try {
+                serverSocket.close();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
             Listen.setEnabled(true);
             StopListening.setEnabled(false);
         }
@@ -126,10 +131,13 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     }
 
     public void startListeningThread() {
-        Thread listeningThread = new Thread(new Runnable() {
+        listeningThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 server = true;
+                Listen.setEnabled(false);
+                StopListening.setEnabled(true);
+                Connect.setEnabled(false);
                 try {
                     setTitle("I'm listening on " + getHostAddress() + ":"+ getPortNumber());
                     serverSocket = new ServerSocket(getPortNumber());
@@ -138,12 +146,12 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                     serverSocket.close();
                     serverSocket = null;
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    server = false;
+                    Listen.setEnabled(true);
+                    StopListening.setEnabled(false);
+                    Connect.setEnabled(true);
                 }
 
-                Listen.setEnabled(false);
-                StopListening.setEnabled(true);
-                Connect.setEnabled(false);
                 changed = false;
                 Save.setEnabled(false);
                 SaveAs.setEnabled(false);
@@ -187,6 +195,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                     Socket socket = new Socket(getIpField(), getPortNumber());
                     em.queueEvent(new ConnectionEvent(socket));
                 } catch (IOException e) {
+                    setTitle("Disconnected");
                     e.printStackTrace();
                 }
                 }
