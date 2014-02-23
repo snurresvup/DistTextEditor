@@ -110,6 +110,7 @@ public class EventManager implements Runnable {
     }
 
     private void handleDisconnectEvent() {
+        dec.setFilter(false);
         try {
             eventSender.close();
             inputStream.close();
