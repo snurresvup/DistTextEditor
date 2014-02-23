@@ -164,7 +164,9 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
+            dec.setFilter(false);
             area.setText("");
+            dec.setFilter(true);
             setTitle("Connecting to " + ipaddress.getText() + ":" + portNumber.getText() + "...");
             startConnectionThread();
             changed = false;
