@@ -37,8 +37,8 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     private String currentFile = "Untitled";
     private boolean changed = false;
     private Double time = 0.0;
-    private DocumentEventCapturer dec = new DocumentEventCapturer(this);
     private volatile SortedMap<Double, TextEvent> log = Collections.synchronizedSortedMap(new TreeMap<Double, TextEvent>());
+    private DocumentEventCapturer dec = new DocumentEventCapturer(this);
     private double id;
     private boolean server = false;
 

@@ -17,7 +17,6 @@ import java.util.*;
  */
 public class EventReplayer{
 
-    private static final Double UNUSED_TIMESTAMP = 0.0;
     private JTextArea area;
     private DocumentEventCapturer dec;
     private SortedMap<Double, TextEvent> log;
@@ -61,18 +60,6 @@ public class EventReplayer{
                     }
                 }
             });
-        }
-    }
-
-    private TextEvent invertEvent(TextEvent textEvent) {
-        if(textEvent instanceof TextInsertEvent) {
-            TextInsertEvent insertEvent = (TextInsertEvent)textEvent;
-            return new TextRemoveEvent(insertEvent.getOffset(), insertEvent.getText().length(), UNUSED_TIMESTAMP);
-        } else if(textEvent instanceof TextRemoveEvent) {
-            TextRemoveEvent removeEvent = (TextRemoveEvent)textEvent;
-            return new TextInsertEvent(removeEvent.getOffset(), removeEvent.getText(), UNUSED_TIMESTAMP);
-        } else {
-            throw new IllegalArgumentException("Unable to rollback a rollback-event :(");
         }
     }
 }

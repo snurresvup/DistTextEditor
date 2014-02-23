@@ -6,15 +6,14 @@ import ddist.events.text.*;
 import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
-import java.util.Collections;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.lang.Thread.interrupted;
 
 public class EventManager implements Runnable {
 
+    private static final Double UNUSED_TIMESTAMP = 0.0;
     private static final double TIME_OFFSET = 0.0001 ;
     private LinkedBlockingQueue<Event> events = new LinkedBlockingQueue<>();
 
@@ -107,6 +106,16 @@ public class EventManager implements Runnable {
         } else if(event instanceof DisconnectEvent) {
             System.out.println("discevent");
             handleDisconnectEvent();
+        } else if(event instanceof RollbackEvent) {
+            RollbackEvent rollbackEvent = (RollbackEvent) event;
+            handleRollbackEvent(rollbackEvent);
+        }
+    }
+
+    private void handleRollbackEvent(RollbackEvent rollbackEvent) {
+        for (TextEvent te : rollbackEvent.getEvents()) {
+            log.put(te.getTimestamp(), te);
+            eventReplayer.replayEvent(te);
         }
     }
 
@@ -171,33 +180,43 @@ public class EventManager implements Runnable {
     }
 
     private void handleTextEvent(TextEvent event) {
-        if(event instanceof TextRemoveEvent) {
-            TextRemoveEvent removeEvent = (TextRemoveEvent)event;
-
-        } else if (event instanceof TextInsertEvent) {
-            TextInsertEvent insertEvent = (TextInsertEvent)event;
-            handleInsertEvent(insertEvent);
+        if(callback.getTime() < event.getTimestamp()){
+            log.put(event.getTimestamp(), event);
+            callback.setTime(Math.floor(event.getTimestamp()) + callback.getID());
+            eventReplayer.replayEvent(event);
+        } else if (callback.getTime() > event.getTimestamp()) {
+            TreeMap<Double, TextEvent> rollbackMap = new TreeMap<>(log.tailMap(event.getTimestamp()));
+            ArrayList<TextEvent> rollbackApplyRollforward = new ArrayList<>();
+            for (TextEvent te : rollbackMap.descendingMap().values()) {
+                rollbackApplyRollforward.add(invertEvent(te));
+            }
+            rollbackApplyRollforward.add(event);
+            updateOffsets(rollbackMap, event);
+            rollbackApplyRollforward.addAll(rollbackMap.values());
+            queueEvent(new RollbackEvent(rollbackApplyRollforward));
         }
     }
 
-    private void handleInsertEvent(TextInsertEvent insertEvent) {
-        if(callback.getTime() < insertEvent.getTimestamp()){
-            log.put(insertEvent.getTimestamp(), insertEvent);
-            callback.setTime(Math.floor(insertEvent.getTimestamp()) + callback.getID());
-            eventReplayer.replayEvent(insertEvent);
-        }else if (callback.getTime() > insertEvent.getTimestamp()) {
-
+    private TextEvent invertEvent(TextEvent textEvent) {
+        if(textEvent instanceof TextInsertEvent) {
+            TextInsertEvent insertEvent = (TextInsertEvent)textEvent;
+            return new TextRemoveEvent(insertEvent.getOffset(), insertEvent.getText().length(), UNUSED_TIMESTAMP);
+        } else if(textEvent instanceof TextRemoveEvent) {
+            TextRemoveEvent removeEvent = (TextRemoveEvent)textEvent;
+            return new TextInsertEvent(removeEvent.getOffset(), removeEvent.getText(), UNUSED_TIMESTAMP);
+        } else {
+            throw new IllegalArgumentException("Unable to rollback a rollback-event :(");
         }
     }
 
     private void updateOffsets(SortedMap<Double, TextEvent> rollbackMap, TextEvent event) {
-        if(event instanceof TextRemoveEvent) {
-            for(TextEvent e: rollbackMap.values()) {
-                if(e.getOffset() >= event.getOffset()){
+        if (event instanceof TextRemoveEvent) {
+            for (TextEvent e: rollbackMap.values()) {
+                if (e.getOffset() >= event.getOffset()){
                     e.setOffset(e.getOffset() - ((TextRemoveEvent) event).getLength());
                 }
             }
-        } else if(event instanceof  TextInsertEvent) {
+        } else if (event instanceof  TextInsertEvent) {
             for(TextEvent e: rollbackMap.values()) {
                 if(e.getOffset() >= event.getOffset()){
                     e.setOffset(e.getOffset() + ((TextInsertEvent) event).getText().length());
