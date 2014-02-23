@@ -85,26 +85,16 @@ public class EventManager implements Runnable {
     private void handleEvent(Event event) {
         if(event instanceof TextEvent) {
             TextEvent textEvent = (TextEvent)event;
-            if(textEvent instanceof TextInsertEvent){
-                System.out.println("InsertEvent");
-                System.out.println(((TextInsertEvent)textEvent).getText());
-            }else if(textEvent instanceof TextRemoveEvent){
-                System.out.println("RemoveEvent");
-            }
             handleTextEvent(textEvent);
         } else if(event instanceof ConnectionEvent) {
-            System.out.println("connectionevent");
             ConnectionEvent connectionEvent = (ConnectionEvent) event;
             handleConnectionEvent(connectionEvent);
         } else if(event instanceof InitialSetupEvent) {
-            System.out.println("initevent");
             InitialSetupEvent initEvent = (InitialSetupEvent)event;
             handleInitialSetupEvent(initEvent);
         } else if(event instanceof ClearTextEvent) {
-            System.out.println("clearevent");
             clearTextArea();
         } else if(event instanceof DisconnectEvent) {
-            System.out.println("discevent");
             handleDisconnectEvent();
         } else if(event instanceof RollbackEvent) {
             RollbackEvent rollbackEvent = (RollbackEvent) event;
@@ -165,7 +155,7 @@ public class EventManager implements Runnable {
             e.printStackTrace();
         }
         dec.setFilter(true);
-        eventReplayer = new EventReplayer(area, dec, log);
+        eventReplayer = new EventReplayer(area, dec);
         callback.setTitleOfWindow("Connected!!!");
         callback.setConnect(false);
         callback.setDisconnect(true);
@@ -193,7 +183,6 @@ public class EventManager implements Runnable {
             rollbackApplyRollforward.add(event);
             updateOffsets(rollbackMap, event);
             rollbackApplyRollforward.addAll(rollbackMap.values());
-            System.out.println(rollbackApplyRollforward);
             queueEvent(new RollbackEvent(rollbackApplyRollforward));
         }
     }

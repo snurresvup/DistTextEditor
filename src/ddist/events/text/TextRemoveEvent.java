@@ -27,8 +27,4 @@ public class TextRemoveEvent extends TextEvent {
     public double getTimestamp() {
         return timestamp;
     }
-
-    public void setTimestamp(double timestamp) {
-        this.timestamp = timestamp;
-    }
 }

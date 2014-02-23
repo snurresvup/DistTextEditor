@@ -1,10 +1,8 @@
 package ddist;
 import ddist.events.text.*;
-import sun.reflect.generics.tree.Tree;
 
 import javax.swing.JTextArea;
 import java.awt.EventQueue;
-import java.util.*;
 
 /**
  *
@@ -19,12 +17,10 @@ public class EventReplayer{
 
     private JTextArea area;
     private DocumentEventCapturer dec;
-    private SortedMap<Double, TextEvent> log;
 
-    public EventReplayer(JTextArea area, DocumentEventCapturer dec, SortedMap<Double, TextEvent> log) {
+    public EventReplayer(JTextArea area, DocumentEventCapturer dec) {
         this.area = area;
         this.dec = dec;
-        this.log = log;
     }
 
     public synchronized void replayEvent(TextEvent event){
@@ -49,7 +45,7 @@ public class EventReplayer{
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     try {
-                        dec.setFilter(false);;
+                        dec.setFilter(false);
                         area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
                         dec.setFilter(true);
                     } catch (Exception e) {

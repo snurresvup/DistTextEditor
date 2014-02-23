@@ -2,9 +2,6 @@ package ddist.events.text;
 
 import ddist.events.Event;
 
-import java.io.Serializable;
-import java.math.BigInteger;
-
 
 public abstract class TextEvent implements Event {
 

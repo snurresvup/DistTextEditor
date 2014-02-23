@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="DistTextEditor:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/DistTextEditor_jar</output-path>
+    <root id="archive" name="DistTextEditor.jar">
+      <element id="module-output" name="DistTextEditor" />
+    </root>
+  </artifact>
+</component>
