@@ -25,7 +25,7 @@ public class EventManager implements Runnable {
     private DocumentEventCapturer dec;
     private CallBack callback;
 
-    private SortedMap<Double, TextEvent> log = Collections.synchronizedSortedMap(new TreeMap<Double, TextEvent>());
+    private volatile SortedMap<Double, TextEvent> log = Collections.synchronizedSortedMap(new TreeMap<Double, TextEvent>());
 
     private Socket connection;
     private ObjectInputStream inputStream;
@@ -136,10 +136,10 @@ public class EventManager implements Runnable {
     }
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
-        queueEvent(new ClearTextEvent(callback.getTime()));
+        queueEvent(new ClearTextEvent());
         callback.setID(initEvent.getTime4Client() - initEvent.getTimestamp());
         callback.setTime(initEvent.getTime4Client());
-        queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), callback.getTime()));
+        queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), callback.getTime() + 1));
     }
 
     private void handleConnectionEvent(ConnectionEvent event) {
@@ -154,7 +154,7 @@ public class EventManager implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        dec.setFilter(true); //TODO may be bad
+        dec.setFilter(true);
         eventReplayer = new EventReplayer(area, dec, log);
         callback.setTitleOfWindow("Connected!!!");
         callback.setConnect(false);
@@ -164,27 +164,13 @@ public class EventManager implements Runnable {
         if (callback.isServer()) {
             callback.setID(0);
             currentClientOffset += TIME_OFFSET;
-            eventSender.queueEvent(new InitialSetupEvent(area.getText(), callback.getTime() + currentClientOffset, callback.getTime()));
+            eventSender.queueEvent(
+                    new InitialSetupEvent(area.getText(), callback.getTime() + currentClientOffset, callback.getTime()));
         }
     }
 
     private void handleTextEvent(TextEvent event) {
-        if(callback.getTime() <= event.getTimestamp()) {
-            System.out.println(callback.getTime() + " < " + event.getTimestamp());
-            log.put(Math.floor(event.getTimestamp()) + callback.getID() + 1, event);
-            callback.setTime(Math.floor(event.getTimestamp()) + callback.getID() + 1);
-            eventReplayer.replayEvent(event);
-        } else if(callback.getTime() > event.getTimestamp()) {
-            System.out.println(callback.getTime() + " > " + event.getTimestamp());
-            SortedMap<Double, TextEvent> rollbackMap = log.tailMap(Math.floor(event.getTimestamp()) + callback.getID());
-            RollbackEvent rollbackEvent = new RollbackEvent(event.getOffset(), rollbackMap, callback.getTime());
-            eventReplayer.replayEvent(rollbackEvent);
-            eventReplayer.replayEvent(event);
-            updateOffsets(rollbackMap, event);
-            ClusterEvent clusterEvent = new ClusterEvent(event.getOffset(), rollbackMap, 0.0);
-            eventReplayer.replayEvent(clusterEvent);
-            callback.setTime(rollbackMap.lastKey() + 1);
-        }
+        eventReplayer.replayEvent(event);
     }
 
     private void updateOffsets(SortedMap<Double, TextEvent> rollbackMap, TextEvent event) {

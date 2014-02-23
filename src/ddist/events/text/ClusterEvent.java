@@ -7,8 +7,8 @@ public class ClusterEvent extends TextEvent{
 
     private SortedMap<Double, TextEvent> toPlay;
 
-    public ClusterEvent(int offset, SortedMap<Double, TextEvent> toPlay, Double timestamp) {
-        super(offset, timestamp);
+    public ClusterEvent(int offset, SortedMap<Double, TextEvent> toPlay) {
+        super(offset);
         this.toPlay = toPlay;
     }
 

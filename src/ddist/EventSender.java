@@ -41,9 +41,6 @@ public class EventSender implements Runnable{
                 while (receiving) {
                     try {
                         Event event = dec.take();
-                        if(event instanceof TextEvent){
-                            log.put(event.getTimestamp(), (TextEvent)event);
-                        }
                         queue.put(event);
                     } catch (InterruptedException e) {
                         e.printStackTrace();

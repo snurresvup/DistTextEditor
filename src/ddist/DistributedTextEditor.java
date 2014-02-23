@@ -131,7 +131,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                     setTitle("I'm listening on " + getHostAddress() + ":"+ getPortNumber());
                     serverSocket = new ServerSocket(getPortNumber());
                     Socket socket = serverSocket.accept();
-                    em.queueEvent(new ConnectionEvent(socket, time, true));
+                    em.queueEvent(new ConnectionEvent(socket));
                     serverSocket.close();
                     serverSocket = null;
                 } catch (IOException e) {
@@ -182,7 +182,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
             public void run() {
                 try {
                     Socket socket = new Socket(getIpField(), getPortNumber());
-                    em.queueEvent(new ConnectionEvent(socket, time, false));
+                    em.queueEvent(new ConnectionEvent(socket));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

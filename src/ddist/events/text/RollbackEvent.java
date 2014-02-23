@@ -8,8 +8,8 @@ public class RollbackEvent extends TextEvent{
 
     private SortedMap<Double, TextEvent> rollbackMap;
 
-    public RollbackEvent(int offset, SortedMap<Double, TextEvent> rollbackMap, Double timestamp ){
-        super(offset, timestamp);
+    public RollbackEvent(int offset, SortedMap<Double, TextEvent> rollbackMap){
+        super(offset);
         this.rollbackMap = rollbackMap;
     }
 

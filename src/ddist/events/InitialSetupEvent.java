@@ -20,13 +20,10 @@ public class InitialSetupEvent implements Event {
     public double getTime4Client() {
         return time4Client;
     }
-
-    @Override
     public double getTimestamp() {
         return timestamp;
     }
 
-    @Override
     public void setTimestamp(double timestamp) {
         this.timestamp = timestamp;
     }

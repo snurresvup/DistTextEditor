@@ -10,12 +10,22 @@ import java.math.BigInteger;
 public class TextInsertEvent extends TextEvent {
 
 	private String text;
+    private double timestamp;
 	
 	public TextInsertEvent(int offset, String text, Double time) {
-		super(offset, time);
+		super(offset);
 		this.text = text;
+        this.timestamp = time;
 	}
 
 	public String getText() { return text; }
+
+    public double getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(double timestamp) {
+        this.timestamp = timestamp;
+    }
 }
 
