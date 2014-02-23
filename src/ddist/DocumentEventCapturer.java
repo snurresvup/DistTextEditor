@@ -33,7 +33,7 @@ public class DocumentEventCapturer extends DocumentFilter {
      *    we want, as we then don't need to keep asking until there are new elements.
      */
     protected LinkedBlockingQueue<TextEvent> eventHistory = new LinkedBlockingQueue<TextEvent>();
-    private boolean filtering = true;
+    private boolean filtering = false;
 
     public DocumentEventCapturer(DistributedTextEditor editor) {
         this.editor = editor;

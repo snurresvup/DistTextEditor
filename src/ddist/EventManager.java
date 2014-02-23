@@ -136,14 +136,14 @@ public class EventManager implements Runnable {
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
         queueEvent(new ClearTextEvent(callback.getTime()));
-        callback.setID(initEvent.getTime4Client()-initEvent.getTimestamp());
+        callback.setID(initEvent.getTime4Client() - initEvent.getTimestamp());
         callback.setTime(initEvent.getTime4Client());
         queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), callback.getTime()));
     }
 
     private void handleConnectionEvent(ConnectionEvent event) {
         connection = event.getSocket();
-        events.clear();
+        events = new LinkedBlockingQueue<>();
         try {
             eventSender = new EventSender(dec, log, connection);
             inputStream = new ObjectInputStream(connection.getInputStream());
@@ -153,13 +153,14 @@ public class EventManager implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        dec.setFilter(true); //TODO may be bad
         eventReplayer = new EventReplayer(area, dec, log);
         callback.setTitleOfWindow("Connected!!!");
         callback.setConnect(false);
         callback.setDisconnect(true);
         callback.setListen(false);
         callback.setStopListening(false);
-        if (event.isServer()) {
+        if (callback.isServer()) {
             callback.setID(0);
             currentClientOffset += TIME_OFFSET;
             eventSender.queueEvent(new InitialSetupEvent(area.getText(), callback.getTime() + currentClientOffset, callback.getTime()));
@@ -167,7 +168,7 @@ public class EventManager implements Runnable {
     }
 
     private void handleTextEvent(TextEvent event) {
-        if(callback.getTime() < event.getTimestamp()) {
+        if(callback.getTime() <= event.getTimestamp()) {
             System.out.println(callback.getTime() + " < " + event.getTimestamp());
             log.put(Math.floor(event.getTimestamp()) + callback.getID() + 1, event);
             callback.setTime(Math.floor(event.getTimestamp()) + callback.getID() + 1);

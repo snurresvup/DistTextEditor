@@ -82,11 +82,9 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         area.addKeyListener(k1);
         setTitle("Disconnected");
         setVisible(true);
-        dec.setFilter(false);
         area.insert("Example of how to capture stuff from the event queue and replay it in another buffer.\n" +
                 "Try to type and delete stuff in the top area.\n" +
                 "Then figure out how it works.\n", 0);
-        dec.setFilter(true);
 
         em = new EventManager(area, dec, this);
         emt = new Thread(em);
