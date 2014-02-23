@@ -24,9 +24,7 @@ public class EventManager implements Runnable {
     private JTextArea area;
     private DocumentEventCapturer dec;
     private CallBack callback;
-
-    private volatile SortedMap<Double, TextEvent> log = Collections.synchronizedSortedMap(new TreeMap<Double, TextEvent>());
-
+    private SortedMap<Double, TextEvent> log;
     private Socket connection;
     private ObjectInputStream inputStream;
     private double currentClientOffset = 0;
@@ -36,6 +34,7 @@ public class EventManager implements Runnable {
         this.area = area;
         this.dec = dec;
         this.callback = time;
+        log = callback.getLog();
     }
 
     @Override
@@ -86,10 +85,12 @@ public class EventManager implements Runnable {
 
     private void handleEvent(Event event) {
         if(event instanceof TextEvent) {
-            System.out.println("textevent");
             TextEvent textEvent = (TextEvent)event;
             if(textEvent instanceof TextInsertEvent){
+                System.out.println("InsertEvent");
                 System.out.println(((TextInsertEvent)textEvent).getText());
+            }else if(textEvent instanceof TextRemoveEvent){
+                System.out.println("RemoveEvent");
             }
             handleTextEvent(textEvent);
         } else if(event instanceof ConnectionEvent) {
@@ -137,16 +138,16 @@ public class EventManager implements Runnable {
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
         queueEvent(new ClearTextEvent());
-        callback.setID(initEvent.getTime4Client() - initEvent.getTimestamp());
-        callback.setTime(initEvent.getTime4Client());
+        callback.setID(initEvent.getClientOffset() - initEvent.getTimestamp());
+        callback.setTime(initEvent.getClientOffset());
         queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
     }
 
     private void handleConnectionEvent(ConnectionEvent event) {
         connection = event.getSocket();
-        events = new LinkedBlockingQueue<>();
+        events.clear();
         try {
-            eventSender = new EventSender(dec, log, connection);
+            eventSender = new EventSender(dec, connection);
             inputStream = new ObjectInputStream(connection.getInputStream());
             est = new Thread(eventSender);
             est.start();
@@ -165,12 +166,26 @@ public class EventManager implements Runnable {
             callback.setID(0);
             currentClientOffset += TIME_OFFSET;
             eventSender.queueEvent(
-                    new InitialSetupEvent(area.getText(), callback.getTime() + currentClientOffset, callback.getTime()));
+                    new InitialSetupEvent(area.getText(), currentClientOffset, callback.getTime()));
         }
     }
 
     private void handleTextEvent(TextEvent event) {
-        eventReplayer.replayEvent(event);
+        if(event instanceof TextRemoveEvent) {
+            TextRemoveEvent removeEvent = (TextRemoveEvent)event;
+
+        } else if (event instanceof TextInsertEvent) {
+            TextInsertEvent insertEvent = (TextInsertEvent)event;
+            handleInsertEvent(insertEvent);
+        }
+    }
+
+    private void handleInsertEvent(TextInsertEvent insertEvent) {
+        if(callback.getTime() < insertEvent.getTimestamp()){
+            eventReplayer.replayEvent(insertEvent);
+        }else if (callback.getTime() > insertEvent.getTimestamp()) {
+
+        }
     }
 
     private void updateOffsets(SortedMap<Double, TextEvent> rollbackMap, TextEvent event) {

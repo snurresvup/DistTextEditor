@@ -1,13 +1,10 @@
 package ddist;
 
 import ddist.events.Event;
-import ddist.events.text.TextEvent;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class EventSender implements Runnable{
@@ -17,7 +14,7 @@ public class EventSender implements Runnable{
     private LinkedBlockingQueue<Event> queue;
     private boolean receiving = true;
 
-    public EventSender(DocumentEventCapturer dec, SortedMap<Double, TextEvent> log, Socket socket) {
+    public EventSender(DocumentEventCapturer dec, Socket socket) {
         this.dec = dec;
         try {
             outputStream = new ObjectOutputStream(socket.getOutputStream());

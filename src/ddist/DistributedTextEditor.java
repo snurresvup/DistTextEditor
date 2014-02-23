@@ -1,6 +1,8 @@
 package ddist;
 
 import ddist.events.ConnectionEvent;
+import ddist.events.text.*;
+import ddist.events.text.TextEvent;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -11,14 +13,15 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DistributedTextEditor extends JFrame implements CallBack {
 
-    public JTextArea getArea() {
-        return area;
-    }
+
 
     private JTextArea area = new JTextArea(40,120);
     private JTextField ipaddress = new JTextField("IP address here");
@@ -35,6 +38,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     private boolean changed = false;
     private Double time = 0.0;
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
+    private volatile SortedMap<Double, TextEvent> log = Collections.synchronizedSortedMap(new TreeMap<Double, TextEvent>());
     private double id;
     private boolean server = false;
 
@@ -320,6 +324,15 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         synchronized (time){
             return time;
         }
+    }
+
+    @Override
+    public SortedMap<Double, TextEvent> getLog() {
+        return log;
+    }
+
+    public JTextArea getArea() {
+        return area;
     }
 
     public static void main(String[] arg) {

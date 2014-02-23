@@ -4,6 +4,8 @@ import ddist.events.text.TextEvent;
 import ddist.events.text.TextInsertEvent;
 import ddist.events.text.TextRemoveEvent;
 
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -22,6 +24,7 @@ import javax.swing.text.DocumentFilter;
 public class DocumentEventCapturer extends DocumentFilter {
 
     private CallBack callBack;
+    private SortedMap<Double, TextEvent> log;
 
     /*
      * We are using a blocking queue for two reasons: 
@@ -37,6 +40,7 @@ public class DocumentEventCapturer extends DocumentFilter {
 
     public DocumentEventCapturer(CallBack callBack) {
         this.callBack = callBack;
+        log = callBack.getLog();
     }
 
     /**
@@ -56,6 +60,7 @@ public class DocumentEventCapturer extends DocumentFilter {
 	/* Queue a copy of the event and then modify the textarea */
         if(filtering){
             callBack.incTime();
+            //Log event
             eventHistory.add(new TextInsertEvent(offset, str, callBack.getTime()));
         }
         super.insertString(fb, offset, str, a);
@@ -69,6 +74,7 @@ public class DocumentEventCapturer extends DocumentFilter {
             TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
             removeEvent.setText(callBack.getArea().getText().substring(offset, offset+length));
             System.out.println("String to be removed: " + callBack.getArea().getText().substring(offset, offset + length));
+            //Log event
             eventHistory.add(removeEvent);
         }
         super.remove(fb, offset, length);
@@ -83,9 +89,11 @@ public class DocumentEventCapturer extends DocumentFilter {
         if(filtering){
             if (length > 0) {
                 callBack.incTime();
+                //Log event
                 eventHistory.add(new TextRemoveEvent(offset, length, callBack.getTime()));
             }
             callBack.incTime();
+            //Log event
             eventHistory.add(new TextInsertEvent(offset, str, callBack.getTime()));
         }
         super.replace(fb, offset, length, str, a);

@@ -1,7 +1,10 @@
 package ddist;
 
 
+import ddist.events.text.TextEvent;
+
 import javax.swing.*;
+import java.util.SortedMap;
 
 public interface CallBack {
     public double getTime();
@@ -17,4 +20,5 @@ public interface CallBack {
     public boolean isServer();
     public void startListeningThread();
     public JTextArea getArea();
+    public SortedMap<Double,TextEvent> getLog();
 }
