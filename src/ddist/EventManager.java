@@ -74,7 +74,6 @@ public class EventManager implements Runnable {
                 }
             }
         }).start();
-
     }
 
     public void queueEvent(Event event){
@@ -121,6 +120,7 @@ public class EventManager implements Runnable {
         callback.setDisconnect(false);
         if (callback.isServer()) {
             callback.setStopListening(true);
+            callback.startListeningThread();
         } else {
             callback.setConnect(true);
             callback.setListen(true);

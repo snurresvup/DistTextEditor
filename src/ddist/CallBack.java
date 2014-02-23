@@ -13,4 +13,5 @@ public interface CallBack {
     public void setListen(boolean enabled);
     public void setStopListening(boolean b);
     public boolean isServer();
+    public void startListeningThread();
 }

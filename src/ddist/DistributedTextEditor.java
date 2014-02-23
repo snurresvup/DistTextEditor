@@ -104,24 +104,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action Listen = new AbstractAction("Listen") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
-            server = true;
-            dec.setFilter(false);
-            area.setText("");
-            dec.setFilter(true);
             startListeningThread();
-            try {
-                String host = getHostAddress();
-                setTitle("I'm listening on " + host + ":"+ getPortNumber());
-            } catch (UnknownHostException e1) {
-                e1.printStackTrace();
-                setTitle("An error was encountered when trying to listen!");
-            }
-            Listen.setEnabled(false);
-            StopListening.setEnabled(true);
-            Connect.setEnabled(false);
-            changed = false;
-            Save.setEnabled(false);
-            SaveAs.setEnabled(false);
         }
     };
 
@@ -141,21 +124,28 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         return host;
     }
 
-    private void startListeningThread() {
+    public void startListeningThread() {
         Thread listeningThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                server = true;
                 try {
+                    setTitle("I'm listening on " + getHostAddress() + ":"+ getPortNumber());
                     serverSocket = new ServerSocket(getPortNumber());
                     Socket socket = serverSocket.accept();
-
                     em.queueEvent(new ConnectionEvent(socket, time, true));
-
                     serverSocket.close();
                     serverSocket = null;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                Listen.setEnabled(false);
+                StopListening.setEnabled(true);
+                Connect.setEnabled(false);
+                changed = false;
+                Save.setEnabled(false);
+                SaveAs.setEnabled(false);
             }
         });
         listeningThread.start();
@@ -164,9 +154,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
-            dec.setFilter(false);
-            area.setText("");
-            dec.setFilter(true);
             setTitle("Connecting to " + ipaddress.getText() + ":" + portNumber.getText() + "...");
             startConnectionThread();
             changed = false;
@@ -211,7 +198,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
 
             em.queueEvent(new DisconnectEvent());
 
-            Connect.setEnabled(true);
             Disconnect.setEnabled(false);
             if (!StopListening.isEnabled()) {
                 Listen.setEnabled(true);
