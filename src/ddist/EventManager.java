@@ -104,6 +104,7 @@ public class EventManager implements Runnable {
             System.out.println("clearevent");
             clearTextArea();
         } else if(event instanceof DisconnectEvent) {
+            System.out.println("discevent");
             handleDisconnectEvent();
         }
     }
@@ -168,7 +169,7 @@ public class EventManager implements Runnable {
     private void handleTextEvent(TextEvent event) {
         if(callback.getTime() < event.getTimestamp()) {
             System.out.println(callback.getTime() + " < " + event.getTimestamp());
-            log.put(Math.floor(event.getTimestamp())+ callback.getID() + 1, event);
+            log.put(Math.floor(event.getTimestamp()) + callback.getID() + 1, event);
             callback.setTime(Math.floor(event.getTimestamp()) + callback.getID() + 1);
             eventReplayer.replayEvent(event);
         } else if(callback.getTime() > event.getTimestamp()) {
@@ -197,6 +198,14 @@ public class EventManager implements Runnable {
                     e.setOffset(e.getOffset() + ((TextInsertEvent) event).getText().length());
                 }
             }
+        }
+    }
+
+    public void disconnected() {
+        try {
+            inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
