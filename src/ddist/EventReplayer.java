@@ -62,6 +62,7 @@ public class EventReplayer{
                 }
             });
         } else if (event instanceof RollbackEvent) {
+            // Tree for all the events which happened after the received event
             TreeMap<Double, TextEvent> treeMap = new TreeMap<>(((RollbackEvent) event).getRollbackMap());
             for(TextEvent e: treeMap.descendingMap().values()){
                 replayEvent(invertEvent(e));

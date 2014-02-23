@@ -18,6 +18,7 @@ public class TextRemoveEvent extends TextEvent {
         return text;
     }
 
+    // TODO, when do we ever set this???
     public void setText(String text) {
         this.text = text;
     }

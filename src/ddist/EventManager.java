@@ -168,15 +168,28 @@ public class EventManager implements Runnable {
     private void handleTextEvent(TextEvent event) {
         if(callback.getTime() < event.getTimestamp()) {
             System.out.println(callback.getTime() + " < " + event.getTimestamp());
+            // log.put(event.getTimestamp() + 1 / offset?, event);
             log.put(event.getTimestamp(), event);
             eventReplayer.replayEvent(event);
         } else if(callback.getTime() > event.getTimestamp()) {
             System.out.println(callback.getTime() + " > " + event.getTimestamp());
+
+            // Gets all elements which have higher timestamp than the received event
             SortedMap<Double, TextEvent> rollbackMap = log.tailMap(event.getTimestamp());
+
+            // Why this?
             callback.incTime();
+
             RollbackEvent rollbackEvent = new RollbackEvent(event.getOffset(), rollbackMap, callback.getTime());
             eventReplayer.replayEvent(rollbackEvent);
+
+            // After the rollback, where do we actually play the event?
+            // eventReplayer.replayEvent(event); ?
+            // then update offsets accordingly and replay events?
+
             updateOffsets(rollbackMap, event);
+
+            // What are we using the offset of the event in the clusterevent for?
             ClusterEvent clusterEvent = new ClusterEvent(event.getOffset(), rollbackMap, 0.0);
             eventReplayer.replayEvent(clusterEvent);
         }
@@ -185,10 +198,12 @@ public class EventManager implements Runnable {
     private void updateOffsets(SortedMap<Double, TextEvent> rollbackMap, TextEvent event) {
         if(event instanceof TextRemoveEvent) {
             for(TextEvent e: rollbackMap.values()) {
+                // TODO ? shouldn't this only affect values whose offset is greater than the event's?
                 e.setOffset(e.getOffset() - ((TextRemoveEvent) event).getLength());
             }
         } else if(event instanceof  TextInsertEvent) {
             for(TextEvent e: rollbackMap.values()) {
+                // TODO ditto here
                 e.setOffset(e.getOffset() + ((TextInsertEvent) event).getText().length());
             }
         }

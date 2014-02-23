@@ -199,7 +199,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
+                }
         }).start();
     }
 
