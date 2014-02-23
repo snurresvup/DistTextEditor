@@ -182,6 +182,8 @@ public class EventManager implements Runnable {
 
     private void handleInsertEvent(TextInsertEvent insertEvent) {
         if(callback.getTime() < insertEvent.getTimestamp()){
+            log.put(insertEvent.getTimestamp(), insertEvent);
+            callback.setTime(Math.floor(insertEvent.getTimestamp()) + callback.getID());
             eventReplayer.replayEvent(insertEvent);
         }else if (callback.getTime() > insertEvent.getTimestamp()) {
 

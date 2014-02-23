@@ -60,8 +60,9 @@ public class DocumentEventCapturer extends DocumentFilter {
 	/* Queue a copy of the event and then modify the textarea */
         if(filtering){
             callBack.incTime();
-            //Log event
-            eventHistory.add(new TextInsertEvent(offset, str, callBack.getTime()));
+            TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTime());
+            log.put(callBack.getTime(), insertEvent);
+            eventHistory.add(insertEvent);
         }
         super.insertString(fb, offset, str, a);
     }
@@ -74,7 +75,7 @@ public class DocumentEventCapturer extends DocumentFilter {
             TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
             removeEvent.setText(callBack.getArea().getText().substring(offset, offset+length));
             System.out.println("String to be removed: " + callBack.getArea().getText().substring(offset, offset + length));
-            //Log event
+            log.put(callBack.getTime(), removeEvent);
             eventHistory.add(removeEvent);
         }
         super.remove(fb, offset, length);
@@ -89,12 +90,14 @@ public class DocumentEventCapturer extends DocumentFilter {
         if(filtering){
             if (length > 0) {
                 callBack.incTime();
-                //Log event
-                eventHistory.add(new TextRemoveEvent(offset, length, callBack.getTime()));
+                TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
+                log.put(callBack.getTime(), removeEvent);
+                eventHistory.add(removeEvent);
             }
             callBack.incTime();
-            //Log event
-            eventHistory.add(new TextInsertEvent(offset, str, callBack.getTime()));
+            TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTime());
+            log.put(callBack.getTime(), insertEvent);
+            eventHistory.add(insertEvent);
         }
         super.replace(fb, offset, length, str, a);
     }
