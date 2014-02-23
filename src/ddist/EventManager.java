@@ -193,6 +193,7 @@ public class EventManager implements Runnable {
             rollbackApplyRollforward.add(event);
             updateOffsets(rollbackMap, event);
             rollbackApplyRollforward.addAll(rollbackMap.values());
+            System.out.println(rollbackApplyRollforward);
             queueEvent(new RollbackEvent(rollbackApplyRollforward));
         }
     }
