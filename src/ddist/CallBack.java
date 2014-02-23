@@ -1,6 +1,8 @@
 package ddist;
 
 
+import javax.swing.*;
+
 public interface CallBack {
     public double getTime();
     public void setTime(double newTime);
@@ -14,4 +16,5 @@ public interface CallBack {
     public void setStopListening(boolean b);
     public boolean isServer();
     public void startListeningThread();
+    public JTextArea getArea();
 }

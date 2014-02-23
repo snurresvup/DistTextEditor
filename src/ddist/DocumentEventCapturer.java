@@ -21,7 +21,7 @@ import javax.swing.text.DocumentFilter;
  */
 public class DocumentEventCapturer extends DocumentFilter {
 
-    private DistributedTextEditor editor;
+    private CallBack callBack;
 
     /*
      * We are using a blocking queue for two reasons: 
@@ -32,11 +32,11 @@ public class DocumentEventCapturer extends DocumentFilter {
      *    empty, then take() will wait until new elements arrive, which is what
      *    we want, as we then don't need to keep asking until there are new elements.
      */
-    protected LinkedBlockingQueue<TextEvent> eventHistory = new LinkedBlockingQueue<TextEvent>();
+    protected LinkedBlockingQueue<TextEvent> eventHistory = new LinkedBlockingQueue<>();
     private boolean filtering = false;
 
-    public DocumentEventCapturer(DistributedTextEditor editor) {
-        this.editor = editor;
+    public DocumentEventCapturer(CallBack callBack) {
+        this.callBack = callBack;
     }
 
     /**
@@ -55,7 +55,8 @@ public class DocumentEventCapturer extends DocumentFilter {
 	
 	/* Queue a copy of the event and then modify the textarea */
         if(filtering){
-            eventHistory.add(new TextInsertEvent(offset, str, 0.0));
+            callBack.incTime();
+            eventHistory.add(new TextInsertEvent(offset, str, callBack.getTime()));
         }
         super.insertString(fb, offset, str, a);
     }
@@ -64,10 +65,11 @@ public class DocumentEventCapturer extends DocumentFilter {
             throws BadLocationException {
 	/* Queue a copy of the event and then modify the textarea */
         if(filtering){
-
-            TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, 0.0);
-            removeEvent.setText(editor.getArea().getText().substring(offset, offset+length));
-            eventHistory.add(new TextRemoveEvent(offset, length, 0.0));
+            callBack.incTime();
+            TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
+            removeEvent.setText(callBack.getArea().getText().substring(offset, offset+length));
+            System.out.println("String to be removed: " + callBack.getArea().getText().substring(offset, offset + length));
+            eventHistory.add(removeEvent);
         }
         super.remove(fb, offset, length);
     }
@@ -80,9 +82,11 @@ public class DocumentEventCapturer extends DocumentFilter {
 	/* Queue a copy of the event and then modify the text */
         if(filtering){
             if (length > 0) {
-                eventHistory.add(new TextRemoveEvent(offset, length, 0.0));
+                callBack.incTime();
+                eventHistory.add(new TextRemoveEvent(offset, length, callBack.getTime()));
             }
-            eventHistory.add(new TextInsertEvent(offset, str, 0.0));
+            callBack.incTime();
+            eventHistory.add(new TextInsertEvent(offset, str, callBack.getTime()));
         }
         super.replace(fb, offset, length, str, a);
     }

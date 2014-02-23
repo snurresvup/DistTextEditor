@@ -10,8 +10,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static java.lang.Thread.interrupted;
-
 public class EventSender implements Runnable{
 
     private DocumentEventCapturer dec;
