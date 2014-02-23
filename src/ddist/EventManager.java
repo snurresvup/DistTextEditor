@@ -139,7 +139,7 @@ public class EventManager implements Runnable {
         queueEvent(new ClearTextEvent());
         callback.setID(initEvent.getTime4Client() - initEvent.getTimestamp());
         callback.setTime(initEvent.getTime4Client());
-        queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), callback.getTime() + 1));
+        queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
     }
 
     private void handleConnectionEvent(ConnectionEvent event) {

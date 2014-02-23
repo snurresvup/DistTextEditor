@@ -15,16 +15,12 @@ import static java.lang.Thread.interrupted;
 public class EventSender implements Runnable{
 
     private DocumentEventCapturer dec;
-    private SortedMap<Double, TextEvent> log;
-    private Socket socket;
     private ObjectOutputStream outputStream;
     private LinkedBlockingQueue<Event> queue;
     private boolean receiving = true;
 
     public EventSender(DocumentEventCapturer dec, SortedMap<Double, TextEvent> log, Socket socket) {
         this.dec = dec;
-        this.log = log;
-        this.socket = socket;
         try {
             outputStream = new ObjectOutputStream(socket.getOutputStream());
         } catch (IOException e) {

@@ -1,7 +1,6 @@
 package ddist;
 
 import ddist.events.ConnectionEvent;
-import ddist.events.DisconnectEvent;
 
 import java.awt.*;
 import java.awt.event.*;

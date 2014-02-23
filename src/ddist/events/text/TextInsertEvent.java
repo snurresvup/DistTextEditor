@@ -1,12 +1,6 @@
 package ddist.events.text;
 
-import java.math.BigInteger;
 
-/**
- * 
- * @author Jesper Buus Nielsen
- *
- */
 public class TextInsertEvent extends TextEvent {
 
 	private String text;

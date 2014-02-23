@@ -1,7 +1,5 @@
 package ddist.events.text;
 
-import java.math.BigInteger;
-
 public class TextRemoveEvent extends TextEvent {
 
     private int length;
