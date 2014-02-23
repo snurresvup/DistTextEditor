@@ -182,8 +182,8 @@ public class EventManager implements Runnable {
             eventReplayer.replayEvent(event);
             updateOffsets(rollbackMap, event);
             ClusterEvent clusterEvent = new ClusterEvent(event.getOffset(), rollbackMap, 0.0);
-            callback.incTime();
             eventReplayer.replayEvent(clusterEvent);
+            callback.setTime(rollbackMap.lastKey() + 1);
         }
     }
 

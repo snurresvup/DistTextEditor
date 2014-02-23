@@ -28,7 +28,7 @@ public class EventReplayer{
         this.log = log;
     }
 
-    public void replayEvent(TextEvent event){
+    public synchronized void replayEvent(TextEvent event){
         if (event instanceof TextInsertEvent) {
             final TextInsertEvent tie = (TextInsertEvent)event;
             EventQueue.invokeLater(new Runnable() {
