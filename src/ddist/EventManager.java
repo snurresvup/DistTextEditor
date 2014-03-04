@@ -13,7 +13,6 @@ import static java.lang.Thread.interrupted;
 
 public class EventManager implements Runnable {
 
-    private static final Double UNUSED_TIMESTAMP = 0.0;
     private static final double TIME_OFFSET = 0.0001 ;
     private LinkedBlockingQueue<Event> events = new LinkedBlockingQueue<>();
 
@@ -96,16 +95,6 @@ public class EventManager implements Runnable {
             clearTextArea();
         } else if(event instanceof DisconnectEvent) {
             handleDisconnectEvent();
-        } else if(event instanceof RollbackEvent) {
-            RollbackEvent rollbackEvent = (RollbackEvent) event;
-            handleRollbackEvent(rollbackEvent);
-        }
-    }
-
-    private void handleRollbackEvent(RollbackEvent rollbackEvent) {
-        for (TextEvent te : rollbackEvent.getEvents()) {
-            log.put(te.getTimestamp(), te);
-            eventReplayer.replayEvent(te);
         }
     }
 
@@ -175,27 +164,7 @@ public class EventManager implements Runnable {
             callback.setTime(Math.floor(event.getTimestamp()) + callback.getID());
             eventReplayer.replayEvent(event);
         } else if (callback.getTime() > event.getTimestamp()) {
-            TreeMap<Double, TextEvent> rollbackMap = new TreeMap<>(log.tailMap(event.getTimestamp()));
-            ArrayList<TextEvent> rollbackApplyRollforward = new ArrayList<>();
-            for (TextEvent te : rollbackMap.descendingMap().values()) {
-                rollbackApplyRollforward.add(invertEvent(te));
-            }
-            rollbackApplyRollforward.add(event);
-            updateOffsets(rollbackMap, event);
-            rollbackApplyRollforward.addAll(rollbackMap.values());
-            queueEvent(new RollbackEvent(rollbackApplyRollforward));
-        }
-    }
-
-    private TextEvent invertEvent(TextEvent textEvent) {
-        if(textEvent instanceof TextInsertEvent) {
-            TextInsertEvent insertEvent = (TextInsertEvent)textEvent;
-            return new TextRemoveEvent(insertEvent.getOffset(), insertEvent.getText().length(), UNUSED_TIMESTAMP);
-        } else if(textEvent instanceof TextRemoveEvent) {
-            TextRemoveEvent removeEvent = (TextRemoveEvent)textEvent;
-            return new TextInsertEvent(removeEvent.getOffset(), removeEvent.getText(), UNUSED_TIMESTAMP);
-        } else {
-            throw new IllegalArgumentException("Unable to rollback a rollback-event :(");
+            //TODO
         }
     }
 
