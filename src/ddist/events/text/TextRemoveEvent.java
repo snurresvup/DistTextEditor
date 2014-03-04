@@ -7,7 +7,7 @@ public class TextRemoveEvent extends TextEvent {
     private double timestamp;
 
     public TextRemoveEvent(int offset, int length, Double time) {
-        super(offset);
+        super(offset, time);
         this.length = length;
         this.timestamp = time;
     }
@@ -26,9 +26,5 @@ public class TextRemoveEvent extends TextEvent {
 
     public double getTimestamp() {
         return timestamp;
-    }
-
-    public void setTimestamp(double timestamp) {
-        this.timestamp = timestamp;
     }
 }

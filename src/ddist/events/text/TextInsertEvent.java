@@ -7,7 +7,7 @@ public class TextInsertEvent extends TextEvent {
     private double timestamp;
 	
 	public TextInsertEvent(int offset, String text, Double time) {
-		super(offset);
+		super(offset, time);
 		this.text = text;
         this.timestamp = time;
 	}
@@ -16,10 +16,6 @@ public class TextInsertEvent extends TextEvent {
 
     public double getTimestamp() {
         return timestamp;
-    }
-
-    public void setTimestamp(double timestamp) {
-        this.timestamp = timestamp;
     }
 }
 

@@ -5,7 +5,6 @@ import ddist.events.text.TextInsertEvent;
 import ddist.events.text.TextRemoveEvent;
 
 import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -74,7 +73,6 @@ public class DocumentEventCapturer extends DocumentFilter {
             callBack.incTime();
             TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
             removeEvent.setText(callBack.getArea().getText().substring(offset, offset+length));
-            System.out.println("String to be removed: " + callBack.getArea().getText().substring(offset, offset + length));
             log.put(callBack.getTime(), removeEvent);
             eventHistory.add(removeEvent);
         }
