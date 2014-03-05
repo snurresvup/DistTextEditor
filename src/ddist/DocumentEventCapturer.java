@@ -133,6 +133,7 @@ public class DocumentEventCapturer extends DocumentFilter {
         if(filtering){
             callBack.incTime();
             TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
+            updateOffset(removeEvent);
             addToEventHistory(removeEvent);
         }else{
             remove4Realz(fb,offset,length);
@@ -149,10 +150,12 @@ public class DocumentEventCapturer extends DocumentFilter {
             if (length > 0) {
                 callBack.incTime();
                 TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
+                updateOffset(removeEvent);
                 addToEventHistory(removeEvent);
             }
             callBack.incTime();
             TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTime());
+            updateOffset(insertEvent);
             addToEventHistory(insertEvent);
         }else{
             replace4Realz(fb,offset,length,str,a);
