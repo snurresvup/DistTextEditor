@@ -3,7 +3,6 @@ package ddist.events.text;
 public class TextRemoveEvent extends TextEvent {
 
     private int length;
-    private String text;
     private double timestamp;
 
     public TextRemoveEvent(int offset, int length, Double time) {
@@ -12,16 +11,12 @@ public class TextRemoveEvent extends TextEvent {
         this.timestamp = time;
     }
 
+    public void setLength(int length) {
+        this.length = length;
+    }
+
     public int getLength() {
         return length;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
     }
 
     public double getTimestamp() {

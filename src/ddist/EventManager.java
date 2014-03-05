@@ -24,7 +24,6 @@ public class EventManager implements Runnable {
     private JTextArea area;
     private DocumentEventCapturer dec;
     private CallBack callback;
-    private SortedMap<Double, TextEvent> log;
     private Socket connection;
     private ObjectInputStream inputStream;
     private double currentClientOffset = 0;
@@ -36,7 +35,6 @@ public class EventManager implements Runnable {
         this.area = area;
         this.dec = dec;
         this.callback = time;
-        log = callback.getLog();
     }
 
     @Override
@@ -48,12 +46,14 @@ public class EventManager implements Runnable {
 
     private void try2ExecuteTextEvent() {
         TextEvent textEvent = textEvents.peek();
+        System.out.println(textEvents);
         if(textEvent != null) {
             sendAcknowledgement(textEvent);
             if(isAcknowledged(textEvent)){
                 try {
                     textEvents.take();
                     acknowledgements.remove(textEvent.getTimestamp());
+                    dec.markEventAsExecuted(textEvent);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -224,22 +224,6 @@ public class EventManager implements Runnable {
     private void handleTextEvent(TextEvent event) {
         callback.setTime(Math.floor(event.getTimestamp()) + callback.getID());
         eventReplayer.replayEvent(event);
-    }
-
-    private void updateOffsets(SortedMap<Double, TextEvent> rollbackMap, TextEvent event) {
-        if (event instanceof TextRemoveEvent) {
-            for (TextEvent e: rollbackMap.values()) {
-                if (e.getOffset() >= event.getOffset()){
-                    e.setOffset(e.getOffset() - ((TextRemoveEvent) event).getLength());
-                }
-            }
-        } else if (event instanceof  TextInsertEvent) {
-            for(TextEvent e: rollbackMap.values()) {
-                if(e.getOffset() >= event.getOffset()){
-                    e.setOffset(e.getOffset() + ((TextInsertEvent) event).getText().length());
-                }
-            }
-        }
     }
 
     public void disconnected() {

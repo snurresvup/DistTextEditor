@@ -4,7 +4,7 @@ import ddist.events.text.TextEvent;
 import ddist.events.text.TextInsertEvent;
 import ddist.events.text.TextRemoveEvent;
 
-import java.util.SortedMap;
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -23,7 +23,6 @@ import javax.swing.text.DocumentFilter;
 public class DocumentEventCapturer extends DocumentFilter {
 
     private CallBack callBack;
-    private SortedMap<Double, TextEvent> log;
 
     /*
      * We are using a blocking queue for two reasons: 
@@ -36,10 +35,10 @@ public class DocumentEventCapturer extends DocumentFilter {
      */
     protected LinkedBlockingQueue<TextEvent> eventHistory = new LinkedBlockingQueue<>();
     private boolean filtering = false;
+    private ArrayList<TextEvent> unExecutedTextEvents = new ArrayList<>();
 
     public DocumentEventCapturer(CallBack callBack) {
         this.callBack = callBack;
-        log = callBack.getLog();
     }
 
     /**
@@ -60,11 +59,72 @@ public class DocumentEventCapturer extends DocumentFilter {
         if(filtering){
             callBack.incTime();
             TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTime());
-            log.put(callBack.getTime(), insertEvent);
-            eventHistory.add(insertEvent);
+            updateOffset(insertEvent);
+            addToEventHistory(insertEvent);
         }else{
             insertString4Realz(fb,offset,str,a);
         }
+    }
+
+    private void updateOffset(TextEvent event) {
+        if(event instanceof TextInsertEvent) {
+            updateOffsetOfInsertEvent((TextInsertEvent)event);
+        } else if (event instanceof TextRemoveEvent){
+            updateOffsetOfRemoveEvent((TextRemoveEvent)event);
+        }
+    }
+
+    private void updateOffsetOfRemoveEvent(TextRemoveEvent event) {
+        for(TextEvent e: unExecutedTextEvents) {
+            if(e.getOffset() > event.getOffset() + event.getLength()) {
+                break;
+            } else if (e instanceof TextInsertEvent && e.getOffset() < event.getOffset()) {
+                event.setOffset(event.getOffset() + ((TextInsertEvent) e).getText().length());
+            } else if (e instanceof TextInsertEvent &&
+                    e.getOffset() >= event.getOffset() &&
+                    e.getOffset() < event.getOffset()+event.getLength()) {
+                event.setLength(event.getLength() + ((TextInsertEvent) e).getText().length());
+            } else if (e instanceof TextRemoveEvent &&
+                    e.getOffset() + ((TextRemoveEvent)e).getLength() < event.getOffset()) {
+                event.setOffset(event.getOffset() - ((TextRemoveEvent) e).getLength());
+            } else if (e instanceof TextRemoveEvent &&
+                    e.getOffset() <= event.getOffset() &&
+                    e.getOffset() + ((TextRemoveEvent) e).getLength() >= event.getOffset() + event.getLength()) {
+                event.setLength(0);
+            } else if (e instanceof TextRemoveEvent &&
+                    e.getOffset() > event.getOffset() &&
+                    e.getOffset() + ((TextRemoveEvent) e).getLength() > event.getOffset() + event.getLength()) {
+                event.setLength(event.getLength() - (event.getOffset() + event.getLength() - e.getOffset()));
+            } else if (e instanceof TextRemoveEvent &&
+                    e.getOffset() > event.getOffset() &&
+                    e.getOffset() + ((TextRemoveEvent) e).getLength() <= event.getOffset() + event.getLength()) {
+                event.setLength(event.getLength() - ((TextRemoveEvent) e).getLength());
+            } else if (e instanceof TextRemoveEvent &&
+                    e.getOffset() <= event.getOffset() &&
+                    e.getOffset() + ((TextRemoveEvent) e).getLength() < event.getOffset() + event.getLength()) {
+                event.setLength(event.getOffset() + event.getLength() - (e.getOffset() + ((TextRemoveEvent) e).getLength()));
+                event.setOffset(e.getOffset() + ((TextRemoveEvent) e).getLength());
+            }
+        }
+    }
+
+    private void updateOffsetOfInsertEvent(TextInsertEvent event) {
+        for(TextEvent e: unExecutedTextEvents) {
+            if(e.getOffset() > event.getOffset()) {
+                break;
+            } else if (e instanceof TextInsertEvent) {
+                event.setOffset(event.getOffset() + ((TextInsertEvent) e).getText().length());
+            } else if (e instanceof TextRemoveEvent && event.getOffset() >= e.getOffset()+((TextRemoveEvent) e).getLength()) {
+                event.setOffset(event.getOffset() - ((TextRemoveEvent) e).getLength());
+            } else if (e instanceof TextRemoveEvent && event.getOffset() < e.getOffset()+((TextRemoveEvent) e).getLength()) {
+                event.setOffset(event.getOffset() - (event.getOffset() - e.getOffset()));
+            }
+        }
+    }
+
+    private void addToEventHistory(TextEvent event) {
+        unExecutedTextEvents.add(event);
+        eventHistory.add(event);
     }
 
     public void remove(FilterBypass fb, int offset, int length)
@@ -73,9 +133,7 @@ public class DocumentEventCapturer extends DocumentFilter {
         if(filtering){
             callBack.incTime();
             TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
-            removeEvent.setText(callBack.getArea().getText().substring(offset, offset + length));
-            log.put(callBack.getTime(), removeEvent);
-            eventHistory.add(removeEvent);
+            addToEventHistory(removeEvent);
         }else{
             remove4Realz(fb,offset,length);
         }
@@ -91,13 +149,11 @@ public class DocumentEventCapturer extends DocumentFilter {
             if (length > 0) {
                 callBack.incTime();
                 TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
-                log.put(callBack.getTime(), removeEvent);
-                eventHistory.add(removeEvent);
+                addToEventHistory(removeEvent);
             }
             callBack.incTime();
             TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTime());
-            log.put(callBack.getTime(), insertEvent);
-            eventHistory.add(insertEvent);
+            addToEventHistory(insertEvent);
         }else{
             replace4Realz(fb,offset,length,str,a);
         }
@@ -118,5 +174,9 @@ public class DocumentEventCapturer extends DocumentFilter {
 
     public synchronized void setFilter(boolean enabled){
         filtering = enabled;
+    }
+
+    public void markEventAsExecuted(TextEvent textEvent) {
+        unExecutedTextEvents.remove(textEvent);
     }
 }
