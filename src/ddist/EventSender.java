@@ -38,9 +38,10 @@ public class EventSender implements Runnable{
                 while (receiving) {
                     try {
                         Event event = dec.take();
-                        queue.put(event);
+                        queueEvent(event);
                         if(event instanceof TextEvent){
-                            acknowledgeEvent((TextEvent)event);
+                            eventManager.queueEvent(event);
+                            //acknowledgeEvent((TextEvent)event);
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -70,7 +71,9 @@ public class EventSender implements Runnable{
             try {
                 Event event= queue.take();
                 sendEvent(event);
-                eventManager.queueEvent(event);
+                if(event instanceof TextEvent){
+                    //eventManager.queueEvent(event);
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -79,6 +82,12 @@ public class EventSender implements Runnable{
 
     private void sendEvent(Event event) {
         try {
+            if(event instanceof AcknowledgeEvent){
+                System.out.println("Writing acknowledge on event: " + ((AcknowledgeEvent)event).getEventId() + " \n" +
+                        "From: " + ((AcknowledgeEvent)event).getSenderId());
+            }else{
+                System.out.println("Writing " + event.getClass() + "");
+            }
             outputStream.writeObject(event);
         } catch (IOException e) {
             // e.printStackTrace();

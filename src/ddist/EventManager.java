@@ -55,6 +55,7 @@ public class EventManager implements Runnable {
                 e.printStackTrace();
             }
             handleTextEvent(textEvent);
+            //TODO rm event from acknowldegements
         }
     }
 
@@ -96,6 +97,12 @@ public class EventManager implements Runnable {
                             e.printStackTrace();
                         }
                         if(input instanceof Event){
+                            if(input instanceof AcknowledgeEvent){
+                                System.out.println("Received acknowledge at " + callback.getID() + " on event: " + ((AcknowledgeEvent)input).getEventId() + " \n" +
+                                        "From: " + ((AcknowledgeEvent)input).getSenderId());
+                            }else{
+                                System.out.println("Received " + input.getClass() + "");
+                            }
                             queueEvent((Event) input);
                         }
                     }
@@ -106,7 +113,7 @@ public class EventManager implements Runnable {
 
     public void queueEvent(Event event){
         if(event instanceof TextEvent){
-            textEvents.put((TextEvent) event);
+            textEvents.put((TextEvent)event);
             handleAcknowledgeEvent(new AcknowledgeEvent(callback.getID(), ((TextEvent) event).getTimestamp()));
             sendAcknowledgement((TextEvent) event);
         } else {
@@ -212,10 +219,8 @@ public class EventManager implements Runnable {
     }
 
     private void handleTextEvent(TextEvent event) {
-        if(callback.getTime() < event.getTimestamp()){
-            callback.setTime(Math.floor(event.getTimestamp()) + callback.getID());
-            eventReplayer.replayEvent(event);
-        }
+        callback.setTime(Math.floor(event.getTimestamp()) + callback.getID());
+        eventReplayer.replayEvent(event);
     }
 
     private void updateOffsets(SortedMap<Double, TextEvent> rollbackMap, TextEvent event) {
