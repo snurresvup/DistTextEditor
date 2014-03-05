@@ -51,11 +51,11 @@ public class EventManager implements Runnable {
         if(textEvent != null && isAcknowledged(textEvent)){
             try {
                 textEvents.take();
+                acknowledgements.remove(textEvent.getTimestamp());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             handleTextEvent(textEvent);
-            //TODO rm event from acknowldegements
         }
     }
 
@@ -185,10 +185,10 @@ public class EventManager implements Runnable {
     }
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
-        queueEvent(new ClearTextEvent());
+        clearTextArea();
         callback.setID(initEvent.getClientOffset() - initEvent.getTimestamp());
         callback.setTime(initEvent.getClientOffset());
-        //queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
+        dec.setFilter(false);
         handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
     }
 
