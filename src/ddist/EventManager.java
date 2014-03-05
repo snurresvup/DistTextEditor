@@ -8,13 +8,15 @@ import java.io.*;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import static java.lang.Thread.interrupted;
 
 public class EventManager implements Runnable {
 
     private static final double TIME_OFFSET = 0.0001 ;
-    private LinkedBlockingQueue<Event> events = new LinkedBlockingQueue<>();
+    private PriorityBlockingQueue<TextEvent> textEvents = new PriorityBlockingQueue<>();
+    private LinkedBlockingQueue<Event> nonTextEvents = new LinkedBlockingQueue<>();
 
     private EventSender eventSender;
     private Thread est;
@@ -26,6 +28,8 @@ public class EventManager implements Runnable {
     private Socket connection;
     private ObjectInputStream inputStream;
     private double currentClientOffset = 0;
+    private HashMap<Double, HashSet<Double>> acknowledgements = new HashMap<>();
+    private int numberOfPeers = 2;//TODO
 
 
     public EventManager(JTextArea area, DocumentEventCapturer dec, CallBack time) {
@@ -38,14 +42,41 @@ public class EventManager implements Runnable {
     @Override
     public void run() {
         while (!interrupted()){
+            executeNonTextEvent();
+        }
+    }
+
+    private void try2ExecuteTextEvent() {
+        TextEvent textEvent = textEvents.peek();
+        if(textEvent != null && isAcknowledged(textEvent)){
             try {
-                Event event = events.take();
-                handleEvent(event);
+                textEvents.take();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            handleTextEvent(textEvent);
         }
     }
+
+    private void executeNonTextEvent() {
+        try {
+            Event event = nonTextEvents.take();
+            handleNonTextEvent(event);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isAcknowledged(TextEvent event) {
+        double eventId = Math.ceil(event.getTimestamp() * 10000) / 10000;
+        if(acknowledgements.get(eventId) != null){
+            if(acknowledgements.get(eventId).size() == numberOfPeers){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private void startEventReceiverThread() {
         new Thread(new Runnable() {
@@ -74,18 +105,25 @@ public class EventManager implements Runnable {
     }
 
     public void queueEvent(Event event){
-        try {
-            events.put(event);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if(event instanceof TextEvent){
+            textEvents.put((TextEvent) event);
+            handleAcknowledgeEvent(new AcknowledgeEvent(callback.getID(), ((TextEvent) event).getTimestamp()));
+            sendAcknowledgement((TextEvent) event);
+        } else {
+            try {
+                nonTextEvents.put(event);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private void handleEvent(Event event) {
-        if(event instanceof TextEvent) {
-            TextEvent textEvent = (TextEvent)event;
-            handleTextEvent(textEvent);
-        } else if(event instanceof ConnectionEvent) {
+    private void sendAcknowledgement(TextEvent event) {
+        eventSender.queueEvent(new AcknowledgeEvent(callback.getID(), event.getTimestamp()));
+    }
+
+    private void handleNonTextEvent(Event event) {
+        if(event instanceof ConnectionEvent) {
             ConnectionEvent connectionEvent = (ConnectionEvent) event;
             handleConnectionEvent(connectionEvent);
         } else if(event instanceof InitialSetupEvent) {
@@ -95,7 +133,22 @@ public class EventManager implements Runnable {
             clearTextArea();
         } else if(event instanceof DisconnectEvent) {
             handleDisconnectEvent();
+        } else if(event instanceof AcknowledgeEvent) {
+            handleAcknowledgeEvent((AcknowledgeEvent)event);
         }
+    }
+
+    private void handleAcknowledgeEvent(AcknowledgeEvent event) {
+        double eventId = Math.ceil(event.getEventId() * 10000) / 10000;
+        double senderId = Math.ceil(event.getSenderId() * 10000) / 10000;
+        if(acknowledgements.containsKey(eventId)){
+            acknowledgements.get(eventId).add(senderId);
+        } else {
+            HashSet<Double> ids = new HashSet<>();
+            ids.add(senderId);
+            acknowledgements.put(eventId, ids);
+        }
+        try2ExecuteTextEvent();
     }
 
     private void handleDisconnectEvent() {
@@ -128,14 +181,14 @@ public class EventManager implements Runnable {
         queueEvent(new ClearTextEvent());
         callback.setID(initEvent.getClientOffset() - initEvent.getTimestamp());
         callback.setTime(initEvent.getClientOffset());
-        queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
+        //queueEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
+        handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
     }
 
     private void handleConnectionEvent(ConnectionEvent event) {
         connection = event.getSocket();
-        events.clear();
         try {
-            eventSender = new EventSender(dec, connection);
+            eventSender = new EventSender(dec, connection, this, callback);
             inputStream = new ObjectInputStream(connection.getInputStream());
             est = new Thread(eventSender);
             est.start();
@@ -160,11 +213,8 @@ public class EventManager implements Runnable {
 
     private void handleTextEvent(TextEvent event) {
         if(callback.getTime() < event.getTimestamp()){
-            log.put(event.getTimestamp(), event);
             callback.setTime(Math.floor(event.getTimestamp()) + callback.getID());
             eventReplayer.replayEvent(event);
-        } else if (callback.getTime() > event.getTimestamp()) {
-            //TODO
         }
     }
 

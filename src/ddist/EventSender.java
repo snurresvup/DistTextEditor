@@ -1,6 +1,8 @@
 package ddist;
 
+import ddist.events.AcknowledgeEvent;
 import ddist.events.Event;
+import ddist.events.text.TextEvent;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -13,9 +15,13 @@ public class EventSender implements Runnable{
     private ObjectOutputStream outputStream;
     private LinkedBlockingQueue<Event> queue;
     private boolean receiving = true;
+    private EventManager eventManager;
+    private CallBack callback;
 
-    public EventSender(DocumentEventCapturer dec, Socket socket) {
+    public EventSender(DocumentEventCapturer dec, Socket socket, EventManager eventManager, CallBack callback) {
         this.dec = dec;
+        this.eventManager = eventManager;
+        this.callback = callback;
         try {
             outputStream = new ObjectOutputStream(socket.getOutputStream());
         } catch (IOException e) {
@@ -33,12 +39,20 @@ public class EventSender implements Runnable{
                     try {
                         Event event = dec.take();
                         queue.put(event);
+                        if(event instanceof TextEvent){
+                            acknowledgeEvent((TextEvent)event);
+                        }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
             }
         }).start();
+    }
+
+    private void acknowledgeEvent(TextEvent event) {
+        eventManager.queueEvent(new AcknowledgeEvent(callback.getID(), event.getTimestamp()));
+
     }
 
     public void queueEvent(Event event) {
@@ -54,7 +68,9 @@ public class EventSender implements Runnable{
         receiveLocalEvents();
         while (receiving) {
             try {
-                sendEvent(queue.take());
+                Event event= queue.take();
+                sendEvent(event);
+                eventManager.queueEvent(event);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

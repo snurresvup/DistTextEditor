@@ -62,8 +62,9 @@ public class DocumentEventCapturer extends DocumentFilter {
             TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTime());
             log.put(callBack.getTime(), insertEvent);
             eventHistory.add(insertEvent);
+        }else{
+            insertString4Realz(fb,offset,str,a);
         }
-        super.insertString(fb, offset, str, a);
     }
 
     public void remove(FilterBypass fb, int offset, int length)
@@ -72,11 +73,12 @@ public class DocumentEventCapturer extends DocumentFilter {
         if(filtering){
             callBack.incTime();
             TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTime());
-            removeEvent.setText(callBack.getArea().getText().substring(offset, offset+length));
+            removeEvent.setText(callBack.getArea().getText().substring(offset, offset + length));
             log.put(callBack.getTime(), removeEvent);
             eventHistory.add(removeEvent);
+        }else{
+            remove4Realz(fb,offset,length);
         }
-        super.remove(fb, offset, length);
     }
 
     public void replace(FilterBypass fb, int offset,
@@ -96,7 +98,21 @@ public class DocumentEventCapturer extends DocumentFilter {
             TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTime());
             log.put(callBack.getTime(), insertEvent);
             eventHistory.add(insertEvent);
+        }else{
+            replace4Realz(fb,offset,length,str,a);
         }
+    }
+
+    public void insertString4Realz(FilterBypass fb, int offset, String str, AttributeSet a) throws BadLocationException{
+        super.insertString(fb, offset, str, a);
+    }
+      
+    public void remove4Realz(FilterBypass fb, int offset, int length) throws BadLocationException {
+        super.remove(fb, offset, length);
+    }
+
+    public void replace4Realz(FilterBypass fb, int offset, int length, String str, AttributeSet a)
+            throws BadLocationException {
         super.replace(fb, offset, length, str, a);
     }
 
