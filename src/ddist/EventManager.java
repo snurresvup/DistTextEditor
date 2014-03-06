@@ -46,21 +46,24 @@ public class EventManager implements Runnable {
     }
 
     private void try2ExecuteTextEvent() {
-        TextEvent textEvent = textEvents.peek();
-        if(textEvent != null) {
-            sendAcknowledgement(textEvent);
-            if(isAcknowledged(textEvent)){
-                try {
-                    textEvents.take();
-                    acknowledgements.remove(textEvent.getTimestamp());
-                    acknowledgedBySelf.remove(textEvent);
-                    dec.markEventAsExecuted(textEvent);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        TextEvent textEvent;
+        do {
+            textEvent = textEvents.peek();
+            if(textEvent != null) {
+                sendAcknowledgement(textEvent);
+                if(isAcknowledged(textEvent)){
+                    try {
+                        textEvents.take();
+                        acknowledgements.remove(textEvent.getTimestamp());
+                        acknowledgedBySelf.remove(textEvent);
+                        dec.markEventAsExecuted(textEvent);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    handleTextEvent(textEvent);
                 }
-                handleTextEvent(textEvent);
             }
-        }
+        } while (textEvents.peek() != null && textEvent != textEvents.peek());
     }
 
     private void executeNonTextEvent() {
