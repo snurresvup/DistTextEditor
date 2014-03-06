@@ -198,8 +198,8 @@ public class EventManager implements Runnable {
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
         clearTextArea();
-        callback.setID(initEvent.getClientOffset() - initEvent.getTimestamp());
-        callback.setTime(initEvent.getClientOffset());
+        callback.setID(initEvent.getClientOffset());
+        callback.setTime(initEvent.getClientOffset() + Math.floor(initEvent.getTimestamp()));
         //dec.setFilter(false);
         handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
     }
