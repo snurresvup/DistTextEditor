@@ -29,9 +29,11 @@ public class EventReplayer{
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     try {
-                        dec.setFilter(false);
-                        area.insert(tie.getText(), tie.getOffset());
-                        dec.setFilter(true);
+                        synchronized (area) {
+                            dec.setFilter(false);
+                            area.insert(tie.getText(), tie.getOffset());
+                            dec.setFilter(true);
+                        }
                     } catch (Exception e) {
                         System.err.println(e);
 				    /* We catch all axceptions, as an uncaught exception would make the
@@ -45,9 +47,11 @@ public class EventReplayer{
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     try {
-                        dec.setFilter(false);
-                        area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
-                        dec.setFilter(true);
+                        synchronized (area) {
+                            dec.setFilter(false);
+                            area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
+                            dec.setFilter(true);
+                        }
                     } catch (Exception e) {
                         System.err.println(e);
 				    /* We catch all axceptions, as an uncaught exception would make the
