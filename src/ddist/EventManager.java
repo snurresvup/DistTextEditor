@@ -47,7 +47,6 @@ public class EventManager implements Runnable {
 
     private void try2ExecuteTextEvent() {
         TextEvent textEvent = textEvents.peek();
-        System.out.println(textEvents);
         if(textEvent != null) {
             sendAcknowledgement(textEvent);
             if(isAcknowledged(textEvent)){
@@ -105,8 +104,8 @@ public class EventManager implements Runnable {
                             if(input instanceof AcknowledgeEvent){
                                 System.out.println("Received acknowledge at " + callback.getID() + " on event: " + ((AcknowledgeEvent)input).getEventId() + " \n" +
                                         "From: " + ((AcknowledgeEvent)input).getSenderId());
-                            }else{
-                                System.out.println("Received " + input.getClass() + "");
+                            }else if(input instanceof TextInsertEvent) {
+                                System.out.println("Received TextInsertEvent " + ((TextInsertEvent)input).getTimestamp() + "");
                             }
                             queueEvent((Event) input);
                         }
@@ -200,7 +199,6 @@ public class EventManager implements Runnable {
         clearTextArea();
         callback.setID(initEvent.getClientOffset());
         callback.setTime(initEvent.getClientOffset() + Math.floor(initEvent.getTimestamp()));
-        //dec.setFilter(false);
         handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
     }
 
@@ -233,8 +231,8 @@ public class EventManager implements Runnable {
     }
 
     private void handleTextEvent(TextEvent event) {
-        callback.setTime(Math.floor(event.getTimestamp()) + callback.getID());
-        System.out.println(callback.getTime());
+        callback.setTime(Math.floor(event.getTimestamp()) + callback.getID() + 1);
+        System.out.println("Handeling text event: " + event.getTimestamp() + ", new timestamp: " + callback.getTime());
         eventReplayer.replayEvent(event);
     }
 

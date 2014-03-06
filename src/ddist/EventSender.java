@@ -3,6 +3,7 @@ package ddist;
 import ddist.events.AcknowledgeEvent;
 import ddist.events.Event;
 import ddist.events.text.TextEvent;
+import ddist.events.text.TextInsertEvent;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -85,8 +86,8 @@ public class EventSender implements Runnable{
             if(event instanceof AcknowledgeEvent){
                 System.out.println("Writing acknowledge on event: " + ((AcknowledgeEvent)event).getEventId() + " \n" +
                         "From: " + ((AcknowledgeEvent)event).getSenderId());
-            }else{
-                System.out.println("Writing " + event.getClass() + "");
+            }else if(event instanceof TextInsertEvent){
+                System.out.println("Writing TextEvent " + ((TextInsertEvent)event).getText() + ", " + ((TextInsertEvent) event).getTimestamp());
             }
             outputStream.writeObject(event);
         } catch (IOException e) {

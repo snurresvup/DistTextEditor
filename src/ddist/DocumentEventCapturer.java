@@ -144,6 +144,7 @@ public class DocumentEventCapturer extends DocumentFilter {
             throws BadLocationException {
 	
 	/* Queue a copy of the event and then modify the text */
+        System.out.println(unExecutedTextEvents);
         if(filtering){
             if (length > 0) {
                 TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTimestamp());
