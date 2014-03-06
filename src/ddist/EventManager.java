@@ -167,7 +167,9 @@ public class EventManager implements Runnable {
     }
 
     private void handleDisconnectEvent() {
-        dec.setFilter(false);
+        synchronized (area){
+            dec.setFilter(false);
+        }
         try {
             eventSender.close();
             inputStream.close();
@@ -187,9 +189,11 @@ public class EventManager implements Runnable {
     }
 
     private void clearTextArea() {
-        dec.setFilter(false);
-        area.setText("");
-        dec.setFilter(true);
+        synchronized (area) {
+            dec.setFilter(false);
+            area.setText("");
+            dec.setFilter(true);
+        }
     }
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
@@ -211,7 +215,9 @@ public class EventManager implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        dec.setFilter(true);
+        synchronized (area) {
+            dec.setFilter(true);
+        }
         eventReplayer = new EventReplayer(area, dec);
         callback.setTitleOfWindow("Connected!!!");
         callback.setConnect(false);
