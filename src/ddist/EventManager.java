@@ -153,7 +153,7 @@ public class EventManager implements Runnable {
         }
     }
 
-    private void handleAcknowledgeEvent(AcknowledgeEvent event) {
+    private synchronized void handleAcknowledgeEvent(AcknowledgeEvent event) {
         double eventId = Math.ceil(event.getEventId() * 10000) / 10000;
         double senderId = Math.ceil(event.getSenderId() * 10000) / 10000;
         if(acknowledgements.containsKey(eventId)){
@@ -222,7 +222,7 @@ public class EventManager implements Runnable {
             callback.setID(0);
             currentClientOffset += TIME_OFFSET;
             eventSender.queueEvent(
-                    new InitialSetupEvent(area.getText(), currentClientOffset, callback.getTime()));
+                    new InitialSetupEvent(area.getText(), currentClientOffset, callback.getTimestamp()));
         }
     }
 

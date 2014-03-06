@@ -1,7 +1,6 @@
 package ddist;
 
 import ddist.events.ConnectionEvent;
-import ddist.events.text.TextEvent;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -12,13 +11,10 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DistributedTextEditor extends JFrame implements CallBack {
+ public class DistributedTextEditor extends JFrame implements CallBack {
 
 
 
@@ -36,7 +32,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     private String currentFile = "Untitled";
     private boolean changed = false;
     private Double time = 0.0;
-    private volatile SortedMap<Double, TextEvent> log = Collections.synchronizedSortedMap(new TreeMap<Double, TextEvent>());
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
     private double id;
     private boolean server = false;
@@ -80,7 +75,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         Save.setEnabled(false);
         SaveAs.setEnabled(false);
 
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         pack();
         area.addKeyListener(k1);
         setTitle("Disconnected");
@@ -302,12 +297,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         return res;
     }
 
-    public void incTime(){
-        synchronized (time){
-            time++;
-        }
-    }
-
     @Override
     public void setTitleOfWindow(String titleOfWindow) {
         setTitle(titleOfWindow);
@@ -323,25 +312,14 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         return id;
     }
 
-    public void setTime(double newTime){
-        synchronized (time){
-            time = newTime;
-        }
-    }
-
-    public double getTime(){
-        synchronized (time){
-            return time;
-        }
-    }
-
     @Override
-    public SortedMap<Double, TextEvent> getLog() {
-        return log;
+    public synchronized double getTimestamp() {
+        time++;
+        return time;
     }
 
-    public JTextArea getArea() {
-        return area;
+    public synchronized void setTime(double newTime){
+        time = newTime;
     }
 
     public static void main(String[] arg) {
