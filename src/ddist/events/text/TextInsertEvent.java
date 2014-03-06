@@ -17,5 +17,13 @@ public class TextInsertEvent extends TextEvent {
     public double getTimestamp() {
         return timestamp;
     }
+
+    @Override
+    public String toString() {
+        return "TextInsertEvent{" +
+                "text='" + text + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
+    }
 }
 

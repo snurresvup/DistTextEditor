@@ -19,6 +19,13 @@ public class TextRemoveEvent extends TextEvent {
         return length;
     }
 
+    @Override
+    public String toString() {
+        return "TextRemoveEvent{" +
+                "timestamp=" + timestamp +
+                '}';
+    }
+
     public double getTimestamp() {
         return timestamp;
     }
