@@ -34,7 +34,7 @@ public class DocumentEventCapturer extends DocumentFilter {
      *    we want, as we then don't need to keep asking until there are new elements.
      */
     protected LinkedBlockingQueue<TextEvent> eventHistory = new LinkedBlockingQueue<>();
-    private boolean filtering = false;
+    private volatile boolean filtering = false;
     private ArrayList<TextEvent> unExecutedTextEvents = new ArrayList<>();
 
     public DocumentEventCapturer(CallBack callBack) {

@@ -155,7 +155,12 @@ import java.util.regex.Pattern;
         listeningThread.start();
     }
 
-    Action Connect = new AbstractAction("Connect") {
+     @Override
+     public double getTime() {
+         return time;
+     }
+
+     Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
             setTitle("Connecting to " + ipaddress.getText() + ":" + portNumber.getText() + "...");

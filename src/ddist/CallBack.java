@@ -12,4 +12,6 @@ public interface CallBack {
     public void setStopListening(boolean b);
     public boolean isServer();
     public void startListeningThread();
+
+    public double getTime();
 }

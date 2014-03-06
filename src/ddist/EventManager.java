@@ -234,6 +234,7 @@ public class EventManager implements Runnable {
 
     private void handleTextEvent(TextEvent event) {
         callback.setTime(Math.floor(event.getTimestamp()) + callback.getID());
+        System.out.println(callback.getTime());
         eventReplayer.replayEvent(event);
     }
 
