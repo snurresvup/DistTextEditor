@@ -29,6 +29,7 @@ public class EventManager implements Runnable {
     private double currentClientOffset = 0;
     private HashMap<Double, HashSet<Double>> acknowledgements = new HashMap<>();
     private int numberOfPeers = 2;//TODO
+    private HashSet<TextEvent> acknowledgedBySelf = new HashSet<>();
 
 
     public EventManager(JTextArea area, DocumentEventCapturer dec, CallBack time) {
@@ -53,6 +54,7 @@ public class EventManager implements Runnable {
                 try {
                     textEvents.take();
                     acknowledgements.remove(textEvent.getTimestamp());
+                    acknowledgedBySelf.remove(textEvent);
                     dec.markEventAsExecuted(textEvent);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -129,7 +131,10 @@ public class EventManager implements Runnable {
     }
 
     private void sendAcknowledgement(TextEvent event) {
-        eventSender.queueEvent(new AcknowledgeEvent(callback.getID(), event.getTimestamp()));
+        if(!acknowledgedBySelf.contains(event)){
+            eventSender.queueEvent(new AcknowledgeEvent(callback.getID(), event.getTimestamp()));
+            acknowledgedBySelf.add(event);
+        }
     }
 
     private void handleNonTextEvent(Event event) {
