@@ -5,6 +5,7 @@ import ddist.events.text.*;
 
 import javax.swing.*;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -24,11 +25,11 @@ public class EventManager implements Runnable {
     private JTextArea area;
     private DocumentEventCapturer dec;
     private CallBack callback;
-    private Socket connection;
-    private ObjectInputStream inputStream;
-    private double currentClientOffset = 0;
+    private HashMap<Double, ConnectionInfo> peers = new HashMap<>();
+    private HashMap<Double, Socket> connections = new HashMap<>();
+    private ArrayList<ObjectInputStream> inputStreams = new ArrayList<>();
     private HashMap<Double, HashSet<Double>> acknowledgements = new HashMap<>();
-    private int numberOfPeers = 2;//TODO
+    private int numberOfPeers = 1;
     private HashSet<TextEvent> acknowledgedBySelf = new HashSet<>();
 
 
@@ -36,6 +37,10 @@ public class EventManager implements Runnable {
         this.area = area;
         this.dec = dec;
         this.callback = time;
+        eventReplayer = new EventReplayer(area, dec);
+        eventSender = new EventSender(dec, this, callback);
+        est = new Thread(eventSender);
+        est.start();
     }
 
     @Override
@@ -86,43 +91,41 @@ public class EventManager implements Runnable {
     }
 
 
-    private void startEventReceiverThread() {
+    private void startEventReceiverThread(final ObjectInputStream inputStream) {
         new Thread(new Runnable() {
             boolean receiving = true;
             @Override
             public void run() {
                 while (receiving){
-                    if(connection != null && connection.isConnected()){
-                        Object input = null;
-                        try {
-                            input = inputStream.readObject();
-                        } catch (IOException e) {
-                            queueEvent(new DisconnectEvent());
-                            receiving = false;
-                            break;
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
+                    Object input = null;
+                    try {
+                        input = inputStream.readObject();
+                    } catch (IOException e) {
+                        queueEvent(new DisconnectEvent());
+                        receiving = false;
+                        e.printStackTrace();
+                        break;
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    if(input instanceof Event){
+                        if(input instanceof AcknowledgeEvent){
+                            System.out.println("Received acknowledge at " + callback.getID() + " on event: " + ((AcknowledgeEvent)input).getEventId() + " \n" +
+                                    "From: " + ((AcknowledgeEvent)input).getSenderId());
+                        }else if(input instanceof TextInsertEvent) {
+                            System.out.println("Received TextInsertEvent " + ((TextInsertEvent)input).getTimestamp() + "");
                         }
-                        if(input instanceof Event){
-                            if(input instanceof AcknowledgeEvent){
-                                System.out.println("Received acknowledge at " + callback.getID() + " on event: " + ((AcknowledgeEvent)input).getEventId() + " \n" +
-                                        "From: " + ((AcknowledgeEvent)input).getSenderId());
-                            }else if(input instanceof TextInsertEvent) {
-                                System.out.println("Received TextInsertEvent " + ((TextInsertEvent)input).getTimestamp() + "");
-                            }
-                            queueEvent((Event) input);
-                        }
+                        queueEvent((Event) input);
                     }
                 }
             }
         }).start();
     }
 
-    public void queueEvent(Event event){
+    public synchronized void queueEvent(Event event){
         if(event instanceof TextEvent){
             textEvents.put((TextEvent)event);
             handleAcknowledgeEvent(new AcknowledgeEvent(callback.getID(), ((TextEvent) event).getTimestamp()));
-            //sendAcknowledgement((TextEvent) event);
         } else {
             try {
                 nonTextEvents.put(event);
@@ -152,6 +155,8 @@ public class EventManager implements Runnable {
             handleDisconnectEvent();
         } else if(event instanceof AcknowledgeEvent) {
             handleAcknowledgeEvent((AcknowledgeEvent)event);
+        } else if(event instanceof JoinEvent) {
+            handleJoinEvent((JoinEvent)event);
         }
     }
 
@@ -168,25 +173,34 @@ public class EventManager implements Runnable {
         try2ExecuteTextEvent();
     }
 
-    private void handleDisconnectEvent() {
+    private void handleDisconnectEvent() { //TODO FIX THIS
         synchronized (area){
             dec.setFilter(false);
         }
-        try {
-            eventSender.close();
-            inputStream.close();
-            connection.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        eventSender.close();
         callback.setTitleOfWindow("Disconnected");
         callback.setDisconnect(false);
-        if (callback.isServer()) {
-            callback.setStopListening(true);
-            callback.startListeningThread();
-        } else {
-            callback.setConnect(true);
-            callback.setListen(true);
+        callback.setConnect(true);
+        callback.setListen(true);
+    }
+
+    private void closeConnections() {
+        for(Socket socket : connections.values()) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void closeInputStreams() {
+        for(InputStream input : inputStreams){
+            try {
+                input.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -201,51 +215,88 @@ public class EventManager implements Runnable {
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
         clearTextArea();
         callback.setID(initEvent.getClientOffset());
-        callback.setTime(initEvent.getClientOffset() + Math.floor(initEvent.getTimestamp()));
+        callback.setTime(initEvent.getClientOffset() + Math.floor(initEvent.getTimestamp()) + 1);
         handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
+        establishInitialConnections(initEvent.getPeers());
+        setNumberOfPeers(initEvent.getPeers());
     }
 
-    private void handleConnectionEvent(ConnectionEvent event) {
-        connection = event.getSocket();
+    private void establishInitialConnections(HashMap<Double, ConnectionInfo> peers) {
+        for(double id : peers.keySet()) {
+            try {
+                ConnectionInfo connectionInfo = peers.get(id);
+                Socket socket = new Socket(connectionInfo.getInetAddress(), connectionInfo.getPort());
+                connections.put(id, socket);
+                ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+                inputStreams.add(inputStream);
+                eventSender.addPeer(socket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private void setNumberOfPeers(HashMap<Double, ConnectionInfo> peers) {
+        numberOfPeers = peers.size() + 1;
+    }
+
+    private void handleConnectionEvent(ConnectionEvent event) { //TODO multiple peers connecting to different listeners simultaneously
+        Socket socket = event.getSocket();
+        InetAddress ip = socket.getInetAddress();
+        int port = socket.getLocalPort();
+
+        double id4Client = numberOfPeers / 10000;
+        connections.put(id4Client, event.getSocket());
+        numberOfPeers++;
         try {
-            eventSender = new EventSender(dec, connection, this, callback);
-            inputStream = new ObjectInputStream(connection.getInputStream());
-            est = new Thread(eventSender);
-            est.start();
-            startEventReceiverThread();
+            eventSender.addPeer(event.getSocket());
+            ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
+            inputStreams.add(inputStream);
+            startEventReceiverThread(inputStream);
         } catch (IOException e) {
             e.printStackTrace();
         }
         synchronized (area) {
             dec.setFilter(true);
         }
-        eventReplayer = new EventReplayer(area, dec);
-        callback.setTitleOfWindow("Connected!!!");
+        eventSender.queueEvent(
+                new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), peers));
+        peers.put(id4Client, new ConnectionInfo(ip, port));
+    }
+
+    private void handleJoinEvent(JoinEvent event) {
+        Socket socket = event.getSocket();
+        try {
+            eventSender.addPeer(socket);
+            ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
+            inputStreams.add(inputStream);
+            startEventReceiverThread(inputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        synchronized (area) {
+            dec.setFilter(true);
+        }
+        callback.startListeningThread(0);
         callback.setConnect(false);
         callback.setDisconnect(true);
         callback.setListen(false);
         callback.setStopListening(false);
-        if (callback.isServer()) {
-            callback.setID(0);
-            currentClientOffset += TIME_OFFSET;
-            eventSender.queueEvent(
-                    new InitialSetupEvent(area.getText(), currentClientOffset, callback.getTimestamp()));
-        }
     }
 
     private void handleTextEvent(TextEvent event) {
         synchronized (area) {
             callback.setTime(Math.max(Math.floor(event.getTimestamp()), Math.floor(callback.getTime())) + callback.getID() + 1);
         }
-        System.out.println("Handeling text event: " + event.getTimestamp() + ", new timestamp: " + callback.getTime());
+        System.out.println("Handling text event: " + event.getTimestamp() + ", new timestamp: " + callback.getTime());
         eventReplayer.replayEvent(event);
     }
 
     public void disconnected() {
-        try {
-            inputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        closeInputStreams();
+        closeConnections();
+        callback.setTitleOfWindow("Disconnected");
+        numberOfPeers = 1;
     }
 }

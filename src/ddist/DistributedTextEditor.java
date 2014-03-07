@@ -1,6 +1,7 @@
 package ddist;
 
 import ddist.events.ConnectionEvent;
+import ddist.events.JoinEvent;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -14,7 +15,9 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
- public class DistributedTextEditor extends JFrame implements CallBack {
+import static java.lang.Thread.interrupted;
+
+public class DistributedTextEditor extends JFrame implements CallBack {
 
 
 
@@ -36,6 +39,7 @@ import java.util.regex.Pattern;
     private double id;
     private boolean server = false;
     private Thread listeningThread;
+    private boolean listening = false;
 
     public DistributedTextEditor() {
         area.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -100,7 +104,8 @@ import java.util.regex.Pattern;
     Action Listen = new AbstractAction("Listen") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
-            startListeningThread();
+            setID(0.0);
+            startListeningThread(getPortNumber());
         }
     };
 
@@ -125,19 +130,22 @@ import java.util.regex.Pattern;
         return host;
     }
 
-    public void startListeningThread() {
+    public void startListeningThread(final int port) {
         listeningThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                server = true;
+                listening = true;
                 Listen.setEnabled(false);
                 StopListening.setEnabled(true);
                 Connect.setEnabled(false);
                 try {
-                    setTitle("I'm listening on " + getHostAddress() + ":"+ getPortNumber());
-                    serverSocket = new ServerSocket(getPortNumber());
-                    Socket socket = serverSocket.accept();
-                    em.queueEvent(new ConnectionEvent(socket));
+                    serverSocket = new ServerSocket(port);
+                    setTitle("I'm listening on " + InetAddress.getLocalHost().getHostAddress() + ":"+ serverSocket.getLocalPort());
+                    while(!interrupted()){
+                        Socket socket = serverSocket.accept();
+                        setTitleOfWindow("Connected!!! Listening on: " + getIp() + ":" + getPort());
+                        em.queueEvent(new ConnectionEvent(socket));
+                    }
                     serverSocket.close();
                     serverSocket = null;
                 } catch (IOException e) {
@@ -163,7 +171,7 @@ import java.util.regex.Pattern;
      Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
-            setTitle("Connecting to " + ipaddress.getText() + ":" + portNumber.getText() + "...");
+            setTitle("Connecting to " + getIpField() + ":" + getPortNumber() + "...");
             startConnectionThread();
             changed = false;
             Save.setEnabled(false);
@@ -193,7 +201,7 @@ import java.util.regex.Pattern;
             public void run() {
                 try {
                     Socket socket = new Socket(getIpField(), getPortNumber());
-                    em.queueEvent(new ConnectionEvent(socket));
+                    em.queueEvent(new JoinEvent(socket));
                 } catch (IOException e) {
                     setTitle("Disconnected");
                     e.printStackTrace();
@@ -204,22 +212,12 @@ import java.util.regex.Pattern;
 
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {
-
             setTitle("Disconnected");
-
             em.disconnected();
 
             Disconnect.setEnabled(false);
-            if (!StopListening.isEnabled()) {
-                Listen.setEnabled(true);
-            }
         }
     };
-
-    @Override
-    public boolean isServer() {
-        return server;
-    }
 
     Action Save = new AbstractAction("Save") {
         public void actionPerformed(ActionEvent e) {
@@ -315,6 +313,16 @@ import java.util.regex.Pattern;
     @Override
     public double getID() {
         return id;
+    }
+
+    @Override
+    public String getIp() {
+        return serverSocket.getInetAddress().getHostAddress();
+    }
+
+    @Override
+    public Integer getPort() {
+        return serverSocket.getLocalPort();
     }
 
     @Override

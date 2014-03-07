@@ -2,33 +2,27 @@ package ddist;
 
 import ddist.events.AcknowledgeEvent;
 import ddist.events.Event;
+import ddist.events.InitialSetupEvent;
 import ddist.events.text.TextEvent;
 import ddist.events.text.TextInsertEvent;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class EventSender implements Runnable{
 
     private DocumentEventCapturer dec;
-    private ObjectOutputStream outputStream;
-    private LinkedBlockingQueue<Event> queue;
+    private ArrayList<ObjectOutputStream> outputStreams = new ArrayList<>();
+    private LinkedBlockingQueue<Event> queue = new LinkedBlockingQueue<>();
     private boolean receiving = true;
     private EventManager eventManager;
-    private CallBack callback;
 
-    public EventSender(DocumentEventCapturer dec, Socket socket, EventManager eventManager, CallBack callback) {
+    public EventSender(DocumentEventCapturer dec, EventManager eventManager, CallBack callback) {
         this.dec = dec;
         this.eventManager = eventManager;
-        this.callback = callback;
-        try {
-            outputStream = new ObjectOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        queue = new LinkedBlockingQueue<>();
         receiveLocalEvents();
     }
 
@@ -42,7 +36,6 @@ public class EventSender implements Runnable{
                         queueEvent(event);
                         if(event instanceof TextEvent){
                             eventManager.queueEvent(event);
-                            //acknowledgeEvent((TextEvent)event);
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -50,11 +43,6 @@ public class EventSender implements Runnable{
                 }
             }
         }).start();
-    }
-
-    private void acknowledgeEvent(TextEvent event) {
-        eventManager.queueEvent(new AcknowledgeEvent(callback.getID(), event.getTimestamp()));
-
     }
 
     public void queueEvent(Event event) {
@@ -72,9 +60,6 @@ public class EventSender implements Runnable{
             try {
                 Event event= queue.take();
                 sendEvent(event);
-                if(event instanceof TextEvent){
-                    //eventManager.queueEvent(event);
-                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -88,17 +73,38 @@ public class EventSender implements Runnable{
                         "From: " + ((AcknowledgeEvent)event).getSenderId());
             }else if(event instanceof TextInsertEvent){
                 System.out.println("Writing TextEvent " + ((TextInsertEvent)event).getText() + ", " + ((TextInsertEvent) event).getTimestamp());
+            }else if(event instanceof InitialSetupEvent) {
+                System.out.println("Writing Init event...");
             }
-            outputStream.writeObject(event);
+            synchronized (outputStreams) {
+                int i = 0;
+                for(ObjectOutputStream out : outputStreams){
+                    out.writeObject(event);
+                    i++;
+                    System.out.println(i);
+                }
+            }
         } catch (IOException e) {
             // e.printStackTrace();
+        }
+    }
+
+    public void addPeer(Socket socket){
+        try {
+            synchronized (outputStreams) {
+                outputStreams.add(new ObjectOutputStream(socket.getOutputStream()));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     public void close() {
         try {
             receiving = false;
-            outputStream.close();
+            for(ObjectOutputStream out : outputStreams){
+                out.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
