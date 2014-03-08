@@ -37,9 +37,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     private Double time = 0.0;
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
     private double id;
-    private boolean server = false;
     private Thread listeningThread;
-    private boolean listening = false;
 
     public DistributedTextEditor() {
         area.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -112,7 +110,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action StopListening = new AbstractAction("Stop Listening") {
         @Override
         public void actionPerformed(ActionEvent e) {
-            server = false;
             setTitle("Disconnected");
             try {
                 serverSocket.close();
@@ -134,22 +131,21 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         listeningThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                listening = true;
                 Listen.setEnabled(false);
                 StopListening.setEnabled(true);
                 Connect.setEnabled(false);
                 try {
                     serverSocket = new ServerSocket(port);
+                    System.out.println(serverSocket.getLocalPort());
                     setTitle("I'm listening on " + InetAddress.getLocalHost().getHostAddress() + ":"+ serverSocket.getLocalPort());
                     while(!interrupted()){
                         Socket socket = serverSocket.accept();
                         setTitleOfWindow("Connected!!! Listening on: " + getIp() + ":" + getPort());
-                        em.queueEvent(new ConnectionEvent(socket));
+                        em.queueEvent(new ConnectionEvent(socket, serverSocket.getLocalPort()));
                     }
                     serverSocket.close();
                     serverSocket = null;
                 } catch (IOException e) {
-                    server = false;
                     Listen.setEnabled(true);
                     StopListening.setEnabled(false);
                     Connect.setEnabled(true);

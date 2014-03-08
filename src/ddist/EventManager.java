@@ -14,8 +14,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import static java.lang.Thread.interrupted;
 
 public class EventManager implements Runnable {
-
-    private static final double TIME_OFFSET = 0.0001 ;
     private PriorityBlockingQueue<TextEvent> textEvents = new PriorityBlockingQueue<>();
     private LinkedBlockingQueue<Event> nonTextEvents = new LinkedBlockingQueue<>();
 
@@ -225,11 +223,12 @@ public class EventManager implements Runnable {
         for(double id : peers.keySet()) {
             try {
                 ConnectionInfo connectionInfo = peers.get(id);
+                System.out.println("Establishing connection to: " + connectionInfo.getInetAddress() + ":" + connectionInfo.getPort());
                 Socket socket = new Socket(connectionInfo.getInetAddress(), connectionInfo.getPort());
                 connections.put(id, socket);
                 ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
                 inputStreams.add(inputStream);
-                eventSender.addPeer(socket);
+                eventSender.addPeer(id, socket);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -244,7 +243,7 @@ public class EventManager implements Runnable {
     private void handleConnectionEvent(ConnectionEvent event) { //TODO multiple peers connecting to different listeners simultaneously
         Socket socket = event.getSocket();
         InetAddress ip = socket.getInetAddress();
-        int port = socket.getPort();
+        int port = event.getListeningPort();
 
         double id4Client = numberOfPeers / 10000;
         System.out.println("nop: " + numberOfPeers);
@@ -252,7 +251,7 @@ public class EventManager implements Runnable {
         connections.put(id4Client, event.getSocket());
         numberOfPeers++;
         try {
-            eventSender.addPeer(event.getSocket());
+            eventSender.addPeer(id4Client, event.getSocket());
             ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
             inputStreams.add(inputStream);
             startEventReceiverThread(inputStream);
@@ -262,15 +261,15 @@ public class EventManager implements Runnable {
         synchronized (area) {
             dec.setFilter(true);
         }
-        eventSender.queueEvent(
-                new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), (HashMap<Double, ConnectionInfo>) peers.clone()));
+        eventSender.sendEventToPeer(
+                new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), (HashMap<Double, ConnectionInfo>) peers.clone()), id4Client);
         peers.put(id4Client, new ConnectionInfo(ip, port));
     }
 
     private void handleJoinEvent(JoinEvent event) {
         Socket socket = event.getSocket();
         try {
-            eventSender.addPeer(socket);
+            eventSender.addPeer(12.3, socket); //TODO fix
             ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
             inputStreams.add(inputStream);
             startEventReceiverThread(inputStream);

@@ -9,13 +9,13 @@ import ddist.events.text.TextInsertEvent;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class EventSender implements Runnable{
 
     private DocumentEventCapturer dec;
-    private ArrayList<ObjectOutputStream> outputStreams = new ArrayList<>();
+    private HashMap<Double, ObjectOutputStream> outputStreams = new HashMap<>();
     private LinkedBlockingQueue<Event> queue = new LinkedBlockingQueue<>();
     private boolean receiving = true;
     private EventManager eventManager;
@@ -77,7 +77,7 @@ public class EventSender implements Runnable{
                 System.out.println("Writing Init event...");
             }
             synchronized (outputStreams) {
-                for(ObjectOutputStream out : outputStreams){
+                for(ObjectOutputStream out : outputStreams.values()){
                     out.writeObject(event);
                 }
             }
@@ -86,10 +86,10 @@ public class EventSender implements Runnable{
         }
     }
 
-    public void addPeer(Socket socket){
+    public void addPeer(double client, Socket socket){
         try {
             synchronized (outputStreams) {
-                outputStreams.add(new ObjectOutputStream(socket.getOutputStream()));
+                outputStreams.put(client, new ObjectOutputStream(socket.getOutputStream()));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -99,9 +99,17 @@ public class EventSender implements Runnable{
     public void close() {
         try {
             receiving = false;
-            for(ObjectOutputStream out : outputStreams){
+            for(ObjectOutputStream out : outputStreams.values()){
                 out.close();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendEventToPeer(Event event, double client) {
+        try {
+            outputStreams.get(client).writeObject(event);
         } catch (IOException e) {
             e.printStackTrace();
         }
