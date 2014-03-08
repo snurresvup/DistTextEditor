@@ -77,11 +77,8 @@ public class EventSender implements Runnable{
                 System.out.println("Writing Init event...");
             }
             synchronized (outputStreams) {
-                int i = 0;
                 for(ObjectOutputStream out : outputStreams){
                     out.writeObject(event);
-                    i++;
-                    System.out.println(i);
                 }
             }
         } catch (IOException e) {

@@ -29,7 +29,7 @@ public class EventManager implements Runnable {
     private HashMap<Double, Socket> connections = new HashMap<>();
     private ArrayList<ObjectInputStream> inputStreams = new ArrayList<>();
     private HashMap<Double, HashSet<Double>> acknowledgements = new HashMap<>();
-    private int numberOfPeers = 1;
+    private double numberOfPeers = 1;
     private HashSet<TextEvent> acknowledgedBySelf = new HashSet<>();
 
 
@@ -244,9 +244,11 @@ public class EventManager implements Runnable {
     private void handleConnectionEvent(ConnectionEvent event) { //TODO multiple peers connecting to different listeners simultaneously
         Socket socket = event.getSocket();
         InetAddress ip = socket.getInetAddress();
-        int port = socket.getLocalPort();
+        int port = socket.getPort();
 
         double id4Client = numberOfPeers / 10000;
+        System.out.println("nop: " + numberOfPeers);
+        System.out.println("id4c: " + id4Client);
         connections.put(id4Client, event.getSocket());
         numberOfPeers++;
         try {
@@ -261,7 +263,7 @@ public class EventManager implements Runnable {
             dec.setFilter(true);
         }
         eventSender.queueEvent(
-                new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), peers));
+                new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), (HashMap<Double, ConnectionInfo>) peers.clone()));
         peers.put(id4Client, new ConnectionInfo(ip, port));
     }
 
