@@ -141,7 +141,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                     while(!interrupted()){
                         Socket socket = serverSocket.accept();
                         setTitleOfWindow("Connected!!! Listening on: " + getIp() + ":" + getPort());
-                        em.queueEvent(new ConnectionEvent(socket, serverSocket.getLocalPort()));
+                        em.queueEvent(new ConnectionEvent(socket)); //TODO FORKERT PORT, vi skal bruge remotens.
                     }
                     serverSocket.close();
                     serverSocket = null;

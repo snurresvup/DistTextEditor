@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -29,6 +30,7 @@ public class EventManager implements Runnable {
     private HashMap<Double, HashSet<Double>> acknowledgements = new HashMap<>();
     private double numberOfPeers = 1;
     private HashSet<TextEvent> acknowledgedBySelf = new HashSet<>();
+    private ObjectInputStream inputStream;
 
 
     public EventManager(JTextArea area, DocumentEventCapturer dec, CallBack time) {
@@ -90,6 +92,7 @@ public class EventManager implements Runnable {
 
 
     private void startEventReceiverThread(final ObjectInputStream inputStream) {
+        this.inputStream = inputStream;
         new Thread(new Runnable() {
             boolean receiving = true;
             @Override
@@ -155,7 +158,13 @@ public class EventManager implements Runnable {
             handleAcknowledgeEvent((AcknowledgeEvent)event);
         } else if(event instanceof JoinEvent) {
             handleJoinEvent((JoinEvent)event);
+        } else if(event instanceof NewPeerEvent) {
+            handleNewPeerEvent((NewPeerEvent)event);
         }
+    }
+
+    private void handleNewPeerEvent(NewPeerEvent event) {
+        peers.put(event.getPeerId(),event.getPeerAddress());
     }
 
     private synchronized void handleAcknowledgeEvent(AcknowledgeEvent event) {
@@ -233,7 +242,11 @@ public class EventManager implements Runnable {
                 e.printStackTrace();
             }
         }
-
+        try {
+            eventSender.queueEvent(new NewPeerEvent(callback.getID(), new ConnectionInfo(InetAddress.getLocalHost(), callback.getPort())));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setNumberOfPeers(HashMap<Double, ConnectionInfo> peers) {
@@ -243,11 +256,8 @@ public class EventManager implements Runnable {
     private void handleConnectionEvent(ConnectionEvent event) { //TODO multiple peers connecting to different listeners simultaneously
         Socket socket = event.getSocket();
         InetAddress ip = socket.getInetAddress();
-        int port = event.getListeningPort();
 
         double id4Client = numberOfPeers / 10000;
-        System.out.println("nop: " + numberOfPeers);
-        System.out.println("id4c: " + id4Client);
         connections.put(id4Client, event.getSocket());
         numberOfPeers++;
         try {
@@ -263,7 +273,8 @@ public class EventManager implements Runnable {
         }
         eventSender.sendEventToPeer(
                 new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), (HashMap<Double, ConnectionInfo>) peers.clone()), id4Client);
-        peers.put(id4Client, new ConnectionInfo(ip, port));
+        System.out.println("id4client" + id4Client);
+        //TODO set noget på standby maybe
     }
 
     private void handleJoinEvent(JoinEvent event) {

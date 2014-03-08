@@ -1,5 +1,6 @@
 package ddist;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
 import ddist.events.AcknowledgeEvent;
 import ddist.events.Event;
 import ddist.events.InitialSetupEvent;
@@ -88,6 +89,7 @@ public class EventSender implements Runnable{
 
     public void addPeer(double client, Socket socket){
         try {
+            System.out.println("AddPeer: [id: " + client + "]");
             synchronized (outputStreams) {
                 outputStreams.put(client, new ObjectOutputStream(socket.getOutputStream()));
             }
