@@ -1,11 +1,11 @@
 package ddist;
 
 public interface CallBack {
-    public double getTimestamp();
-    public void setTime(double newTime);
+    public VectorClock getTimestamp();
+    public void setTime(VectorClock newTime);
     public void setTitleOfWindow(String titleOfWindow);
-    public void setID(double id);
-    public double getID();
+    public void setID(int id);
+    public int getID();
     public String getIp();
     public Integer getPort();
     public void setConnect(boolean enabled);
@@ -13,5 +13,5 @@ public interface CallBack {
     public void setListen(boolean enabled);
     public void startListeningThread(int port);
 
-    public double getTime();
+    public VectorClock getTime();
 }

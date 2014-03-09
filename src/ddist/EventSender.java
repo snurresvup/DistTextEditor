@@ -15,7 +15,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class EventSender implements Runnable{
 
     private DocumentEventCapturer dec;
-    private HashMap<Double, ObjectOutputStream> outputStreams = new HashMap<>();
+    private HashMap<Integer, ObjectOutputStream> outputStreams = new HashMap<>();
     private LinkedBlockingQueue<Event> queue = new LinkedBlockingQueue<>();
     private boolean receiving = true;
     private EventManager eventManager;
@@ -72,10 +72,10 @@ public class EventSender implements Runnable{
     private void sendEvent(Event event) {
         try {
             if(event instanceof AcknowledgeEvent){
-                System.out.println("Writing acknowledge on event: " + ((AcknowledgeEvent)event).getEventId() + " \n" +
+                System.out.println("Writing acknowledge on event: " + ((AcknowledgeEvent)event).getEventId().getVector() + " \n" +
                         "From: " + ((AcknowledgeEvent)event).getSenderId());
             }else if(event instanceof TextInsertEvent){
-                System.out.println("Writing TextEvent " + ((TextInsertEvent)event).getText() + ", " + ((TextInsertEvent) event).getTimestamp());
+                System.out.println("Writing TextEvent " + ((TextInsertEvent)event).getText() + ", " + ((TextInsertEvent) event).getTimestamp().getVector());
             }else if(event instanceof InitialSetupEvent) {
                 System.out.println("Writing Init event...");
             }
@@ -91,7 +91,7 @@ public class EventSender implements Runnable{
         }
     }
 
-    public void addPeer(double client, Socket socket){
+    public void addPeer(int client, Socket socket){
         try {
             System.out.println("AddPeer: [id: " + client + ", Socket: "+ socket.getRemoteSocketAddress() +"]");
             synchronized (outputStreams) {
@@ -113,7 +113,7 @@ public class EventSender implements Runnable{
         }
     }
 
-    public void sendEventToPeer(Event event, double client) {
+    public void sendEventToPeer(Event event, int client) {
         try {
             outputStreams.get(client).writeObject(event);
         } catch (IOException e) {

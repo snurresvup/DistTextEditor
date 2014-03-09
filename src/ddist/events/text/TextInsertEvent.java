@@ -1,13 +1,15 @@
 package ddist.events.text;
 
 
+import ddist.VectorClock;
+
 public class TextInsertEvent extends TextEvent {
 
     private static final long serialVersionUID = 1L;
     private String text;
-    private double timestamp;
+    private VectorClock timestamp;
 	
-	public TextInsertEvent(int offset, String text, Double time) {
+	public TextInsertEvent(int offset, String text, VectorClock time) {
 		super(offset, time);
 		this.text = text;
         this.timestamp = time;
@@ -15,7 +17,7 @@ public class TextInsertEvent extends TextEvent {
 
 	public String getText() { return text; }
 
-    public double getTimestamp() {
+    public VectorClock getTimestamp() {
         return timestamp;
     }
 

@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,12 +35,13 @@ public class DistributedTextEditor extends JFrame implements CallBack {
 
     private String currentFile = "Untitled";
     private boolean changed = false;
-    private Double time = 0.0;
+    private VectorClock time;
     private DocumentEventCapturer dec = new DocumentEventCapturer(this);
-    private double id;
+    private int id;
     private Thread listeningThread;
 
     public DistributedTextEditor() {
+        time = new VectorClock();
         area.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
         ((AbstractDocument) area.getDocument()).setDocumentFilter(dec);
@@ -100,7 +102,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action Listen = new AbstractAction("Listen") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
-            setID(0.0);
+            setID(0);
             startListeningThread(getPortNumber());
             setTitle("I'm listening on " + getIp() + ":" + getPortNumber());
         }
@@ -120,7 +122,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                 Connect.setEnabled(false);
                 try {
                     serverSocket = new ServerSocket(port);
-                    System.out.println(serverSocket.getLocalPort());
                     while(!interrupted()){
                         Socket socket = serverSocket.accept();
                         Disconnect.setEnabled(true);
@@ -143,7 +144,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     }
 
     @Override
-    public double getTime() {
+    public VectorClock getTime() {
         return time;
     }
 
@@ -286,12 +287,13 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     }
 
     @Override
-    public void setID(double id) {
+    public void setID(int id) {
         this.id = id;
+        time.set(id, 0);
     }
 
     @Override
-    public double getID() {
+    public int getID() {
         return id;
     }
 
@@ -311,12 +313,12 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     }
 
     @Override
-    public synchronized double getTimestamp() {
-        time++;
+    public synchronized VectorClock getTimestamp() {
+        time.set(id, time.get(id) + 1);
         return time;
     }
 
-    public synchronized void setTime(double newTime){
+    public synchronized void setTime(VectorClock newTime){
         time = newTime;
     }
 

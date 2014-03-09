@@ -2,14 +2,14 @@ package ddist.events;
 
 
 public class RemovePeerEvent implements Event{
-    private double peerId;
+    private int peerId;
     private static final long serialVersionUID = 1L;
 
-    public RemovePeerEvent(double peerId) {
+    public RemovePeerEvent(int peerId) {
         this.peerId = peerId;
     }
 
-    public double getPeerId() {
+    public int getPeerId() {
         return peerId;
     }
 }

@@ -1,5 +1,6 @@
 package ddist.events.text;
 
+import ddist.VectorClock;
 import ddist.events.Event;
 import java.lang.Comparable;
 
@@ -13,14 +14,14 @@ public abstract class TextEvent implements Event, Comparable<TextEvent> {
     }
 
     private int offset;
-    private double timestamp;
+    private VectorClock timestamp;
 
-    TextEvent(int offset, double timestamp) {
+    TextEvent(int offset, VectorClock timestamp) {
         this.offset = offset;
         this.timestamp = timestamp;
     }
 
-    public double getTimestamp() {return timestamp;}
+    public VectorClock getTimestamp() {return timestamp;}
 
     public int getOffset() {
         return offset;
@@ -28,11 +29,6 @@ public abstract class TextEvent implements Event, Comparable<TextEvent> {
 
     @Override
     public int compareTo(TextEvent event){
-        if(getTimestamp()-event.getTimestamp() > 0){
-            return 1;
-        } else if (getTimestamp()-event.getTimestamp() <0){
-            return -1;
-        }
-        return 0;
+        return getTimestamp().compareTo(event.getTimestamp());
     }
 }

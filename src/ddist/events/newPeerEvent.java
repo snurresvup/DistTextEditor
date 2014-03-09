@@ -6,11 +6,11 @@ import ddist.ConnectionInfo;
  * Created by Benjamin on 08-03-14.
  */
 public class NewPeerEvent implements Event{
-    private double peerId;
+    private int peerId;
     private ConnectionInfo peerAddress;
     private static final long serialVersionUID = 1L;
 
-    public NewPeerEvent(double peerId, ConnectionInfo peerAddress) {
+    public NewPeerEvent(int peerId, ConnectionInfo peerAddress) {
         this.peerId = peerId;
         this.peerAddress = peerAddress;
     }
@@ -19,7 +19,7 @@ public class NewPeerEvent implements Event{
         return peerAddress;
     }
 
-    public double getPeerId() {
+    public int getPeerId() {
         return peerId;
     }
 }

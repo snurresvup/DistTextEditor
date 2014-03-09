@@ -1,21 +1,23 @@
 package ddist.events;
 
+import ddist.VectorClock;
+
 public class AcknowledgeEvent implements Event {
-    private double senderId;
-    private double eventId;
+    private int senderId;
+    private VectorClock eventId;
     private static final long serialVersionUID = 1L;
 
 
-    public AcknowledgeEvent(double senderId, double eventId) {
+    public AcknowledgeEvent(int senderId, VectorClock eventId) {
         this.eventId = eventId;
         this.senderId = senderId;
     }
 
-    public double getSenderId() {
+    public int getSenderId() {
         return senderId;
     }
 
-    public double getEventId() {
+    public VectorClock getEventId() {
         return eventId;
     }
 }

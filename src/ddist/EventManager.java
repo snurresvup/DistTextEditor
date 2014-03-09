@@ -13,7 +13,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import static java.lang.Thread.interrupted;
 
 public class EventManager implements Runnable {
-    public static final double TIME_OFFSET = 0.0001;
+    public static final int TIME_OFFSET = 1;
     private PriorityBlockingQueue<TextEvent> textEvents = new PriorityBlockingQueue<>();
     private LinkedBlockingQueue<Event> nonTextEvents = new LinkedBlockingQueue<>();
 
@@ -23,14 +23,13 @@ public class EventManager implements Runnable {
     private final JTextArea area;
     private DocumentEventCapturer dec;
     private CallBack callback;
-    private HashMap<Double, ConnectionInfo> peers = new HashMap<>();
-    private HashMap<Double, Socket> connections = new HashMap<>();
+    private HashMap<Integer, ConnectionInfo> peers = new HashMap<>();
+    private HashMap<Integer, Socket> connections = new HashMap<>();
     private ArrayList<ObjectInputStream> inputStreams = new ArrayList<>();
-    private HashMap<Double, HashSet<Double>> acknowledgements = new HashMap<>();
+    private HashMap<VectorClock, HashSet<Integer>> acknowledgements = new HashMap<>();
     private double numberOfPeers = 1;
     private HashSet<TextEvent> acknowledgedBySelf = new HashSet<>();
-    private double currentClientOffset;
-
+    private int currentClientOffset;
 
     public EventManager(JTextArea area, DocumentEventCapturer dec, CallBack time) {
         this.area = area;
@@ -88,7 +87,7 @@ public class EventManager implements Runnable {
     }
 
     private boolean isAcknowledged(TextEvent event) {
-        double eventId = Math.ceil(event.getTimestamp() * 10000) / 10000;
+        VectorClock eventId = event.getTimestamp();
         if(acknowledgements.get(eventId) != null){
             if(acknowledgements.get(eventId).size() == numberOfPeers){
                 return true;
@@ -98,10 +97,10 @@ public class EventManager implements Runnable {
     }
 
 
-    private void startEventReceiverThread(final ObjectInputStream input, final double remoteId) {
+    private void startEventReceiverThread(final ObjectInputStream input, final int remoteId) {
         final ObjectInputStream inputStream = input;
         new Thread(new Runnable() {
-            double realId = remoteId;
+            int realId = remoteId;
             boolean receiving = true;
             @Override
             public void run() {
@@ -110,8 +109,7 @@ public class EventManager implements Runnable {
                     try {
                         input = inputStream.readObject();
                         if(input instanceof InitialSetupEvent && realId == 12.3) {
-                            realId = ((InitialSetupEvent) input).getTimestamp() - Math.floor(((InitialSetupEvent) input).getTimestamp());
-                            realId = Math.ceil(realId * 10000)/10000;
+                            realId = ((InitialSetupEvent)input).getSenderId();
                             System.out.println("new id on receiver thread = " + realId);
                         }
                     } catch (EOFException e) {
@@ -128,10 +126,10 @@ public class EventManager implements Runnable {
                     }
                     if(input instanceof Event){
                         if(input instanceof AcknowledgeEvent){
-                            System.out.println("Received acknowledge at " + callback.getID() + " on event: " + ((AcknowledgeEvent)input).getEventId() + " \n" +
+                            System.out.println("Received acknowledge at " + callback.getID() + " on event: " + ((AcknowledgeEvent)input).getEventId().getVector() + " \n" +
                                     "From: " + ((AcknowledgeEvent)input).getSenderId());
                         }else if(input instanceof TextInsertEvent) {
-                            System.out.println("Received TextInsertEvent " + ((TextInsertEvent)input).getTimestamp() + "");
+                            System.out.println("Received TextInsertEvent " + ((TextInsertEvent)input).getTimestamp().getVector() + "");
                         }else if(input instanceof NewPeerEvent) {
                             System.out.println("Received NewPeerEvent at " + callback.getID() + " from peer: " + ((NewPeerEvent) input).getPeerId());
                         }else if(input instanceof InitialSetupEvent) {
@@ -197,7 +195,7 @@ public class EventManager implements Runnable {
         peers.remove(event.getPeerId());
         connections.remove(event.getPeerId());
         eventSender.removePeer(event.getPeerId());
-        for(Double e : acknowledgements.keySet()) {
+        for(VectorClock e : acknowledgements.keySet()) {
             acknowledgements.get(e).remove(event.getPeerId());
         }
         if(numberOfPeers > 1) {
@@ -213,18 +211,19 @@ public class EventManager implements Runnable {
     }
 
     private synchronized void handleAcknowledgeEvent(AcknowledgeEvent event) {
+        System.out.println("Handling acknowledge on: " + event.getEventId().getVector()+ " from " + event.getSenderId());
         // This is the id of the acknowledged event. Note that we use id as another word for timestamp.
         // We can do this because we know that the timestamps will always be unique.
-        double eventId = Math.ceil(event.getEventId() * 10000) / 10000;
+        VectorClock eventId = event.getEventId();
         // This is the id of the sender. This number is the decimal that the sender adds to integer time stamp of his events.
         // Lookup how to do total ordered multicasting to understand why we have this id.
-        double senderId = Math.ceil(event.getSenderId() * 10000) / 10000;
+        int senderId = event.getSenderId();
         if(acknowledgements.containsKey(eventId)){
             // If we have already received an acknowledgement from someone on the event, we simply add the senderId to the hash set
             acknowledgements.get(eventId).add(senderId);
         } else {
             // If this is the first acknowledgement we receive on this event, we create a new hash set and add the senderId to it.
-            HashSet<Double> ids = new HashSet<>();
+            HashSet<Integer> ids = new HashSet<>();
             ids.add(senderId);
             // Then we map the eventId to the created hash set.
             acknowledgements.put(eventId, ids);
@@ -270,19 +269,19 @@ public class EventManager implements Runnable {
             clearTextArea();
             callback.setID(initEvent.getClientOffset());
             currentClientOffset = initEvent.getClientOffset();
-            callback.setTime(initEvent.getClientOffset() + Math.floor(initEvent.getTimestamp()) + 1);
-            handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
+            callback.setTime(initEvent.getTimestamp());
+            handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), new VectorClock()));
             establishInitialConnections(initEvent.getPeers());
             setNumberOfPeers(initEvent.getPeers());
         }
     }
 
-    private void establishInitialConnections(HashMap<Double, ConnectionInfo> peers) {
+    private void establishInitialConnections(HashMap<Integer, ConnectionInfo> peers) {
         // Runs through all the peers of the peer we just connected to. That is all, minus himself. Thus when the first two
         // peers connect to each other, the peer keyset is empty is thus the for loop below does nothing. However, when
         // a third peer connects, there's a single peer in either of the peer's peer keyset. Since we did not connect to him
         // directly when we connected to the first peer, this is handled here.
-        for(double id : peers.keySet()) {
+        for(int id : peers.keySet()) {
             try {
                 ConnectionInfo connectionInfo = peers.get(id);
                 System.out.println("Establishing connection to: " + connectionInfo.getInetAddress() + ":" + connectionInfo.getPort());
@@ -290,7 +289,6 @@ public class EventManager implements Runnable {
                 connections.put(id, socket);
                 ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
                 inputStreams.add(inputStream);
-                System.out.println("id of new event is ### many pears ### " + id);
                 startEventReceiverThread(inputStream, id);
                 eventSender.addPeer(id, socket);
             } catch (IOException e) {
@@ -304,7 +302,7 @@ public class EventManager implements Runnable {
         }
     }
 
-    private void setNumberOfPeers(HashMap<Double, ConnectionInfo> peers) {
+    private void setNumberOfPeers(HashMap<Integer, ConnectionInfo> peers) {
         // When we receive an initial setup event the peers contained in the HashMap of the sender is everyone in his
         // network minus himself. Thus, we're going to add 2 because the total amount of peers is going to be 2 higher
         // than what he knows when we connect to him.
@@ -315,7 +313,7 @@ public class EventManager implements Runnable {
         // When a client receives a connection from a peer, it sends a ConnectionEvent to its own eventManager. In this
         // method we handle the initial setup of id's for the new peer, and telling him what the state of the
         // network / program is.
-        double id4Client = currentClientOffset + TIME_OFFSET;
+        int id4Client = currentClientOffset + TIME_OFFSET;
         connections.put(id4Client, event.getSocket());
         numberOfPeers++;
         try {
@@ -336,8 +334,10 @@ public class EventManager implements Runnable {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+        callback.getTime().addPeer();
         eventSender.sendEventToPeer(
-                new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), (HashMap<Double, ConnectionInfo>) peers.clone()), id4Client);
+                new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), (HashMap<Integer, ConnectionInfo>) peers.clone(), callback.getID()),
+                id4Client);
         System.out.println("id4client" + id4Client);
         //TODO set noget på standby maybe
     }
@@ -347,10 +347,10 @@ public class EventManager implements Runnable {
         // that we are now connected to.
         Socket socket = event.getSocket();
         try {
-            eventSender.addPeer(12.3, socket); //TODO fix
+            eventSender.addPeer(1200, socket); //TODO fix
             ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
             inputStreams.add(inputStream);
-            startEventReceiverThread(inputStream, 12.3);
+            startEventReceiverThread(inputStream, 1200);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -376,9 +376,13 @@ public class EventManager implements Runnable {
 
     private void handleTextEvent(TextEvent event) {
         synchronized (area) {
-            callback.setTime(Math.max(Math.floor(event.getTimestamp()), Math.floor(callback.getTime())) + callback.getID() + 1);
+            ArrayList<Integer> newTime = new ArrayList<>();
+            for(int i = 0; i<event.getTimestamp().size() ; i++) {
+                newTime.add(Math.max(event.getTimestamp().getVector().get(i), callback.getTime().get(i)));
+            }
+            callback.setTime(new VectorClock(newTime));
         }
-        System.out.println("Handling text event: " + event.getTimestamp() + ", new timestamp: " + callback.getTime());
+        System.out.println("Handling text event: " + event.getTimestamp().getVector() + ", new timestamp: " + callback.getTime().getVector());
         eventReplayer.replayEvent(event);
     }
 
