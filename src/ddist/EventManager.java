@@ -346,8 +346,10 @@ public class EventManager implements Runnable {
     }
 
     public void disconnect() {
+        dec.setFilter(false);
         eventSender.queueEvent(new RemovePeerEvent(callback.getID()));
         closeInputStreams();
+        eventSender.close();
         callback.setTitleOfWindow("Disconnected");
         numberOfPeers = 1;
     }
