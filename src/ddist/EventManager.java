@@ -5,10 +5,7 @@ import ddist.events.text.*;
 
 import javax.swing.*;
 import java.io.*;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -103,6 +100,7 @@ public class EventManager implements Runnable {
     private void startEventReceiverThread(final ObjectInputStream input, final double remoteId) {
         final ObjectInputStream inputStream = input;
         new Thread(new Runnable() {
+            double realId = remoteId;
             boolean receiving = true;
             @Override
             public void run() {
@@ -110,8 +108,13 @@ public class EventManager implements Runnable {
                     Object input = null;
                     try {
                         input = inputStream.readObject();
+                        if(input instanceof InitialSetupEvent && realId == 12.3) {
+                            realId = ((InitialSetupEvent) input).getTimestamp() - Math.floor(((InitialSetupEvent) input).getTimestamp());
+                            realId = Math.ceil(realId * 10000)/10000;
+                            System.out.println("new id on receiver thread = " + realId);
+                        }
                     } catch (IOException e) {
-                        queueEvent(new RemovePeerEvent(remoteId));
+                        queueEvent(new RemovePeerEvent(realId));
                         receiving = false;
                         e.printStackTrace();
                         break;
@@ -185,13 +188,16 @@ public class EventManager implements Runnable {
     }
 
     private void handleRemovePeerEvent(RemovePeerEvent event) {
+        System.out.println("Remove peer " + event.getPeerId());
         peers.remove(event.getPeerId());
         connections.remove(event.getPeerId());
         eventSender.removePeer(event.getPeerId());
         for(Double e : acknowledgements.keySet()) {
             acknowledgements.get(e).remove(event.getPeerId());
         }
-        numberOfPeers--;
+        if(numberOfPeers > 1) {
+            numberOfPeers--;
+        }
     }
 
     private void handleNewPeerEvent(NewPeerEvent event) {
@@ -258,6 +264,7 @@ public class EventManager implements Runnable {
         if(numberOfPeers == 1){
             clearTextArea();
             callback.setID(initEvent.getClientOffset());
+            currentClientOffset = initEvent.getClientOffset();
             callback.setTime(initEvent.getClientOffset() + Math.floor(initEvent.getTimestamp()) + 1);
             handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
             establishInitialConnections(initEvent.getPeers());
@@ -371,7 +378,6 @@ public class EventManager implements Runnable {
 
     public void disconnect() {
         dec.setFilter(false);
-        eventSender.queueEvent(new RemovePeerEvent(callback.getID()));
         eventSender.close();
         closeInputStreams();
         textEvents.clear();
