@@ -34,9 +34,7 @@ public class EventSender implements Runnable{
                     try {
                         Event event = dec.take();
                         queueEvent(event);
-                        if(event instanceof TextEvent){
-                            eventManager.queueEvent(event);
-                        }
+                        eventManager.queueEvent(event); //TODO removed instanceof check here does it still work?
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
