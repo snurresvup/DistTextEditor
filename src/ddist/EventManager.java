@@ -22,7 +22,7 @@ public class EventManager implements Runnable {
     private EventSender eventSender;
     private Thread est;
     private EventReplayer eventReplayer;
-    private JTextArea area;
+    private final JTextArea area;
     private DocumentEventCapturer dec;
     private CallBack callback;
     private HashMap<Double, ConnectionInfo> peers = new HashMap<>();
@@ -182,6 +182,8 @@ public class EventManager implements Runnable {
     }
 
     private void handleNewPeerEvent(NewPeerEvent event) {
+        // The peer which was not connected by the new peer receives a NewPeerEvent, which contains the ID and the
+        // ConnectionInfo of the new peer.
         peers.put(event.getPeerId(),event.getPeerAddress());
     }
 
@@ -229,6 +231,8 @@ public class EventManager implements Runnable {
     }
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
+        // When the two peers are initially connected, we need to tell the new peer about the rest of the network, and
+        // setup the text area. We also need to set our ID and the current time, which is done below.
         if(numberOfPeers == 1){
             clearTextArea();
             callback.setID(initEvent.getClientOffset());
@@ -240,6 +244,10 @@ public class EventManager implements Runnable {
     }
 
     private void establishInitialConnections(HashMap<Double, ConnectionInfo> peers) {
+        // Runs through all the peers of the peer we just connected to. That is all, minus himself. Thus when the first two
+        // peers connect to each other, the peer keyset is empty is thus the for loop below does nothing. However, when
+        // a third peer connects, there's a single peer in either of the peer's peer keyset. Since we did not connect to him
+        // directly when we connected to the first peer, this is handled here.
         for(double id : peers.keySet()) {
             try {
                 ConnectionInfo connectionInfo = peers.get(id);
@@ -262,15 +270,20 @@ public class EventManager implements Runnable {
     }
 
     private void setNumberOfPeers(HashMap<Double, ConnectionInfo> peers) {
+        // When we receive an initial setup event the peers contained in the HashMap of the sender is everyone in his
+        // network minus himself. Thus, we're going to add 2 because the total amount of peers is going to be 2 higher
+        // than what he knows when we connect to him.
         numberOfPeers = peers.size() + 2;
     }
 
     private void handleConnectionEvent(ConnectionEvent event) { //TODO multiple peers connecting to different listeners simultaneously
-
+        // When a client connects to a peer in the network, it receives a ConnectionEvent. In this method we handle the
+        // initial setup of id's for the new peer, and telling him what the state of the network / program is.
         double id4Client = numberOfPeers / 10000;
         connections.put(id4Client, event.getSocket());
         numberOfPeers++;
         try {
+            // Adds the peer to our outgoing/ingoing streams and starts listening for events on the inputstream.
             eventSender.addPeer(id4Client, event.getSocket());
             ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
             inputStreams.add(inputStream);
@@ -281,6 +294,7 @@ public class EventManager implements Runnable {
         synchronized (area) {
             dec.setFilter(true);
         }
+
         eventSender.sendEventToPeer(
                 new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), (HashMap<Double, ConnectionInfo>) peers.clone()), id4Client);
         System.out.println("id4client" + id4Client);
@@ -288,6 +302,8 @@ public class EventManager implements Runnable {
     }
 
     private void handleJoinEvent(JoinEvent event) {
+        // When we connect to a peer we queue a local JoinEvent. This adds the input/output streams accordingly to the peer
+        // that we are now connected to.
         Socket socket = event.getSocket();
         try {
             eventSender.addPeer(12.3, socket); //TODO fix
@@ -314,7 +330,6 @@ public class EventManager implements Runnable {
         callback.setConnect(false);
         callback.setDisconnect(true);
         callback.setListen(false);
-        callback.setStopListening(false);
     }
 
     private void handleTextEvent(TextEvent event) {

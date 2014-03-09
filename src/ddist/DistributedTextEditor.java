@@ -21,7 +21,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
 
 
 
-    private JTextArea area = new JTextArea(40,120);
+    private final JTextArea area = new JTextArea(40,120);
     private JTextField ipaddress = new JTextField("IP address here");
     private JTextField portNumber = new JTextField("Port number here");
     protected ServerSocket serverSocket;
@@ -64,7 +64,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         JMB.add(con);
 
         con.add(Listen);
-        con.add(StopListening);
         con.addSeparator();
         con.add(Connect);
         con.add(Disconnect);
@@ -73,7 +72,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         file.add(Quit);
 
         Disconnect.setEnabled(false);
-        StopListening.setEnabled(false);
         Save.setEnabled(false);
         SaveAs.setEnabled(false);
 
@@ -108,20 +106,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         }
     };
 
-    Action StopListening = new AbstractAction("Stop Listening") {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            setTitle("Disconnected");
-            try {
-                serverSocket.close();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-            Listen.setEnabled(true);
-            StopListening.setEnabled(false);
-        }
-    };
-
     private String getHostAddress() throws UnknownHostException {
         String host;
         host = InetAddress.getLocalHost().getHostAddress();
@@ -133,7 +117,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
             @Override
             public void run() {
                 Listen.setEnabled(false);
-                StopListening.setEnabled(true);
                 Connect.setEnabled(false);
                 try {
                     serverSocket = new ServerSocket(port);
@@ -148,7 +131,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                     serverSocket = null;
                 } catch (IOException e) {
                     Listen.setEnabled(true);
-                    StopListening.setEnabled(false);
                     Connect.setEnabled(true);
                 }
 
@@ -160,12 +142,12 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         listeningThread.start();
     }
 
-     @Override
-     public double getTime() {
-         return time;
-     }
+    @Override
+    public double getTime() {
+        return time;
+    }
 
-     Action Connect = new AbstractAction("Connect") {
+    Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
             setTitle("Connecting to " + getIpField() + ":" + getPortNumber() + "...");
@@ -188,10 +170,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         Listen.setEnabled(enabled);
     }
 
-    public void setStopListening(boolean enabled) {
-        StopListening.setEnabled(enabled);
-    }
-
     private void startConnectionThread() {
         new Thread(new Runnable() {
             @Override
@@ -203,7 +181,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                     setTitle("Disconnected");
                     e.printStackTrace();
                 }
-                }
+            }
         }).start();
     }
 
@@ -215,7 +193,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
             Disconnect.setEnabled(false);
             Connect.setEnabled(true);
             Listen.setEnabled(true);
-            StopListening.setEnabled(false);
         }
     };
 

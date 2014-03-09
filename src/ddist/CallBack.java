@@ -11,7 +11,6 @@ public interface CallBack {
     public void setConnect(boolean enabled);
     public void setDisconnect(boolean enabled);
     public void setListen(boolean enabled);
-    public void setStopListening(boolean b);
     public void startListeningThread(int port);
 
     public double getTime();
