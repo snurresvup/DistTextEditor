@@ -56,7 +56,7 @@ public class EventManager implements Runnable {
             // We look at the first event in the queue. We must also do a null check because peek() returns null if the queue is empty.
             textEvent = textEvents.peek();
             if(textEvent != null) {
-                // This is where we send acknowledgements to the other peers.
+                // The sendAcknowledgement method ensures that an acknowledgement is sent to every other peer.
                 sendAcknowledgement(textEvent);
                 // The isAcknowledged method checks if we have recorded acknowledgements from every peer on the text event it is give, it returns true if that is the case.
                 if(isAcknowledged(textEvent)){
