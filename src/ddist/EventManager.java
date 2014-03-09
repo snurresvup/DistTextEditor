@@ -277,13 +277,14 @@ public class EventManager implements Runnable {
     }
 
     private void handleConnectionEvent(ConnectionEvent event) { //TODO multiple peers connecting to different listeners simultaneously
-        // When a client connects to a peer in the network, it receives a ConnectionEvent. In this method we handle the
-        // initial setup of id's for the new peer, and telling him what the state of the network / program is.
+        // When a client receives a connection from i peer, it sends a ConnectionEvent to its own eventManager. In this
+        // method we handle the initial setup of id's for the new peer, and telling him what the state of the
+        // network / program is.
         double id4Client = numberOfPeers / 10000;
         connections.put(id4Client, event.getSocket());
         numberOfPeers++;
         try {
-            // Adds the peer to our outgoing/ingoing streams and starts listening for events on the inputstream.
+            // Adds the peer to our outgoing/incoming streams and starts listening for events on the inputstream.
             eventSender.addPeer(id4Client, event.getSocket());
             ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
             inputStreams.add(inputStream);
@@ -294,7 +295,11 @@ public class EventManager implements Runnable {
         synchronized (area) {
             dec.setFilter(true);
         }
-
+        try {
+            eventSender.sendEventToPeer(new NewPeerEvent(callback.getID(), new ConnectionInfo(InetAddress.getLocalHost(), callback.getPort())), id4Client);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
         eventSender.sendEventToPeer(
                 new InitialSetupEvent(area.getText(), id4Client, callback.getTimestamp(), (HashMap<Double, ConnectionInfo>) peers.clone()), id4Client);
         System.out.println("id4client" + id4Client);
