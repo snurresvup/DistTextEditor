@@ -188,6 +188,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {
             setTitle("Disconnected");
+
             em.disconnect();
 
             Disconnect.setEnabled(false);
@@ -195,6 +196,8 @@ public class DistributedTextEditor extends JFrame implements CallBack {
             Listen.setEnabled(true);
         }
     };
+
+
 
     Action Save = new AbstractAction("Save") {
         public void actionPerformed(ActionEvent e) {
