@@ -201,15 +201,23 @@ public class EventManager implements Runnable {
     }
 
     private synchronized void handleAcknowledgeEvent(AcknowledgeEvent event) {
+        // This is the id of the acknowledged event. Note that we use id as another word for timestamp.
+        // We can do this because we know that the timestamps will always be unique.
         double eventId = Math.ceil(event.getEventId() * 10000) / 10000;
+        // This is the id of the sender. This number is the decimal that the sender adds to integer time stamp of his events.
+        // Lookup how to do total ordered multicasting to understand why we have this id.
         double senderId = Math.ceil(event.getSenderId() * 10000) / 10000;
         if(acknowledgements.containsKey(eventId)){
+            // If we have already received an acknowledgement from someone on the event, we simply add the senderId to the hash set
             acknowledgements.get(eventId).add(senderId);
         } else {
+            // If this is the first acknowledgement we receive on this event, we create a new hash set and add the senderId to it.
             HashSet<Double> ids = new HashSet<>();
             ids.add(senderId);
+            // Then we map the eventId to the created hash set.
             acknowledgements.put(eventId, ids);
         }
+        // We must now see if we can execute the foremost text event in the queue
         try2ExecuteTextEvent();
     }
 
