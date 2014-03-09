@@ -100,6 +100,9 @@ public class EventSender implements Runnable{
     public void close() {
         try {
             receiving = false;
+            while(!queue.isEmpty()){
+
+            }
             for(ObjectOutputStream out : outputStreams.values()){
                 out.close();
             }
@@ -113,6 +116,17 @@ public class EventSender implements Runnable{
             outputStreams.get(client).writeObject(event);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void removePeer(double peerId) {
+        synchronized (outputStreams) {
+            try {
+                outputStreams.get(peerId).close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            outputStreams.remove(peerId);
         }
     }
 }

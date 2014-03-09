@@ -140,8 +140,9 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                     setTitle("I'm listening on " + InetAddress.getLocalHost().getHostAddress() + ":"+ serverSocket.getLocalPort());
                     while(!interrupted()){
                         Socket socket = serverSocket.accept();
+                        Disconnect.setEnabled(true);
                         setTitleOfWindow("Connected!!! Listening on: " + getIp() + ":" + getPort());
-                        em.queueEvent(new ConnectionEvent(socket)); //TODO FORKERT PORT, vi skal bruge remotens.
+                        em.queueEvent(new ConnectionEvent(socket));
                     }
                     serverSocket.close();
                     serverSocket = null;
@@ -209,9 +210,12 @@ public class DistributedTextEditor extends JFrame implements CallBack {
     Action Disconnect = new AbstractAction("Disconnect") {
         public void actionPerformed(ActionEvent e) {
             setTitle("Disconnected");
-            em.disconnected();
+            em.disconnect();
 
             Disconnect.setEnabled(false);
+            Connect.setEnabled(true);
+            Listen.setEnabled(true);
+            StopListening.setEnabled(false);
         }
     };
 

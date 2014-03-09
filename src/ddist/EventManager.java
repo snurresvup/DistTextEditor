@@ -30,7 +30,6 @@ public class EventManager implements Runnable {
     private HashMap<Double, HashSet<Double>> acknowledgements = new HashMap<>();
     private double numberOfPeers = 1;
     private HashSet<TextEvent> acknowledgedBySelf = new HashSet<>();
-    private ObjectInputStream inputStream;
 
 
     public EventManager(JTextArea area, DocumentEventCapturer dec, CallBack time) {
@@ -91,8 +90,8 @@ public class EventManager implements Runnable {
     }
 
 
-    private void startEventReceiverThread(final ObjectInputStream inputStream) {
-        this.inputStream = inputStream;
+    private void startEventReceiverThread(final ObjectInputStream input, final double remoteId) {
+        final ObjectInputStream inputStream = input;
         new Thread(new Runnable() {
             boolean receiving = true;
             @Override
@@ -102,7 +101,7 @@ public class EventManager implements Runnable {
                     try {
                         input = inputStream.readObject();
                     } catch (IOException e) {
-                        queueEvent(new DisconnectEvent());
+                        queueEvent(new RemovePeerEvent(remoteId));
                         receiving = false;
                         e.printStackTrace();
                         break;
@@ -119,6 +118,8 @@ public class EventManager implements Runnable {
                             System.out.println("Received NewPeerEvent at " + callback.getID() + " from peer: " + ((NewPeerEvent) input).getPeerId());
                         }else if(input instanceof InitialSetupEvent) {
                             System.out.println("Received InitialSetupEvent at " + ((InitialSetupEvent) input).getClientOffset() + "containing: " + ((InitialSetupEvent) input).getPeers());
+                        }else if(input instanceof RemovePeerEvent) {
+                            System.out.println("Received RemovePeerEvent at " + callback.getID() + ". Peer to remove: " + ((RemovePeerEvent) input).getPeerId());
                         }
                         queueEvent((Event) input);
                     }
@@ -164,7 +165,19 @@ public class EventManager implements Runnable {
             handleJoinEvent((JoinEvent)event);
         } else if(event instanceof NewPeerEvent) {
             handleNewPeerEvent((NewPeerEvent)event);
+        } else if(event instanceof RemovePeerEvent) {
+            handleRemovePeerEvent((RemovePeerEvent)event);
         }
+    }
+
+    private void handleRemovePeerEvent(RemovePeerEvent event) {
+        peers.remove(event.getPeerId());
+        connections.remove(event.getPeerId());
+        eventSender.removePeer(event.getPeerId());
+        for(Double e : acknowledgements.keySet()) {
+            acknowledgements.get(e).remove(event.getPeerId());
+        }
+        numberOfPeers--;
     }
 
     private void handleNewPeerEvent(NewPeerEvent event) {
@@ -185,6 +198,7 @@ public class EventManager implements Runnable {
     }
 
     private void handleDisconnectEvent() { //TODO FIX THIS
+        eventSender.queueEvent(new RemovePeerEvent(callback.getID()));
         synchronized (area){
             dec.setFilter(false);
         }
@@ -193,16 +207,6 @@ public class EventManager implements Runnable {
         callback.setDisconnect(false);
         callback.setConnect(true);
         callback.setListen(true);
-    }
-
-    private void closeConnections() {
-        for(Socket socket : connections.values()) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private void closeInputStreams() {
@@ -243,7 +247,7 @@ public class EventManager implements Runnable {
                 connections.put(id, socket);
                 ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
                 inputStreams.add(inputStream);
-                startEventReceiverThread(inputStream);
+                startEventReceiverThread(inputStream, id);
                 eventSender.addPeer(id, socket);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -269,7 +273,7 @@ public class EventManager implements Runnable {
             eventSender.addPeer(id4Client, event.getSocket());
             ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
             inputStreams.add(inputStream);
-            startEventReceiverThread(inputStream);
+            startEventReceiverThread(inputStream, id4Client);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -288,7 +292,7 @@ public class EventManager implements Runnable {
             eventSender.addPeer(12.3, socket); //TODO fix
             ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
             inputStreams.add(inputStream);
-            startEventReceiverThread(inputStream);
+            startEventReceiverThread(inputStream, 12.3);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -310,9 +314,9 @@ public class EventManager implements Runnable {
         eventReplayer.replayEvent(event);
     }
 
-    public void disconnected() {
+    public void disconnect() {
+        eventSender.queueEvent(new RemovePeerEvent(callback.getID()));
         closeInputStreams();
-        closeConnections();
         callback.setTitleOfWindow("Disconnected");
         numberOfPeers = 1;
     }
