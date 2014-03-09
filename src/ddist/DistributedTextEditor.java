@@ -160,12 +160,12 @@ public class DistributedTextEditor extends JFrame implements CallBack {
         listeningThread.start();
     }
 
-     @Override
-     public double getTime() {
-         return time;
-     }
+    @Override
+    public double getTime() {
+        return time;
+    }
 
-     Action Connect = new AbstractAction("Connect") {
+    Action Connect = new AbstractAction("Connect") {
         public void actionPerformed(ActionEvent e) {
             saveOld();
             setTitle("Connecting to " + getIpField() + ":" + getPortNumber() + "...");
@@ -203,7 +203,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                     setTitle("Disconnected");
                     e.printStackTrace();
                 }
-                }
+            }
         }).start();
     }
 
