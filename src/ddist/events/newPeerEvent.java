@@ -8,6 +8,7 @@ import ddist.ConnectionInfo;
 public class NewPeerEvent implements Event{
     private double peerId;
     private ConnectionInfo peerAddress;
+    private static final long serialVersionUID = 1L;
 
     public NewPeerEvent(double peerId, ConnectionInfo peerAddress) {
         this.peerId = peerId;
