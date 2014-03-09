@@ -31,6 +31,7 @@ public class EventManager implements Runnable {
     private HashMap<Double, HashSet<Double>> acknowledgements = new HashMap<>();
     private double numberOfPeers = 1;
     private HashSet<TextEvent> acknowledgedBySelf = new HashSet<>();
+    private double currentClientOffset;
 
 
     public EventManager(JTextArea area, DocumentEventCapturer dec, CallBack time) {
@@ -185,6 +186,7 @@ public class EventManager implements Runnable {
         // The peer which was not connected by the new peer receives a NewPeerEvent, which contains the ID and the
         // ConnectionInfo of the new peer.
         peers.put(event.getPeerId(),event.getPeerAddress());
+        currentClientOffset = Math.max(event.getPeerId(), callback.getID());
     }
 
     private synchronized void handleAcknowledgeEvent(AcknowledgeEvent event) {
@@ -280,7 +282,7 @@ public class EventManager implements Runnable {
         // When a client receives a connection from i peer, it sends a ConnectionEvent to its own eventManager. In this
         // method we handle the initial setup of id's for the new peer, and telling him what the state of the
         // network / program is.
-        double id4Client = numberOfPeers / 10000;
+        double id4Client = currentClientOffset + 0.0001;
         connections.put(id4Client, event.getSocket());
         numberOfPeers++;
         try {
@@ -348,8 +350,13 @@ public class EventManager implements Runnable {
     public void disconnect() {
         dec.setFilter(false);
         eventSender.queueEvent(new RemovePeerEvent(callback.getID()));
-        closeInputStreams();
         eventSender.close();
+        closeInputStreams();
+        textEvents.clear();
+        peers.clear();
+        acknowledgements.clear();
+        acknowledgedBySelf.clear();
+        connections.clear();
         callback.setTitleOfWindow("Disconnected");
         numberOfPeers = 1;
     }
