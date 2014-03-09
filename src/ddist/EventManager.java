@@ -54,12 +54,18 @@ public class EventManager implements Runnable {
 
     private void try2ExecuteTextEvent() {
         TextEvent textEvent;
+        // This is one of the rare ocations where the do-while loop makes perfectly sense. We have a loop that we want executed at least once but possibly more than once.
         do {
+            // We look at the first event in the queue. We must also do a null check because peek() returns null if the queue is empty.
             textEvent = textEvents.peek();
             if(textEvent != null) {
+                // This is where we send acknowledgements to the other peers.
                 sendAcknowledgement(textEvent);
+                // The isAcknowledged method checks if we have recorded acknowledgements from every peer on the text event it is give, it returns true if that is the case.
                 if(isAcknowledged(textEvent)){
+                    // We are now free to execute the event
                     try {
+                        // First we do some clean up, removing the event from places where we had it recorded.
                         textEvents.take();
                         acknowledgements.remove(textEvent.getTimestamp());
                         acknowledgedBySelf.remove(textEvent);
@@ -67,6 +73,7 @@ public class EventManager implements Runnable {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    // We execute the event!! YAY!
                     handleTextEvent(textEvent);
                 }
             }
@@ -136,7 +143,7 @@ public class EventManager implements Runnable {
         if(event instanceof TextEvent){
             // If the event is a text event we add it to the text event queue
             textEvents.put((TextEvent)event);
-            // We send an acknowledgement to ourself for the event.
+            // We send an acknowledgement to ourself for the event. This also triggers a check to see if we can execute the foremost text event in the queue
             handleAcknowledgeEvent(new AcknowledgeEvent(callback.getID(), ((TextEvent) event).getTimestamp()));
         } else {
             // else we add the event to the non-text event queue
