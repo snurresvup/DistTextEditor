@@ -130,11 +130,15 @@ public class EventManager implements Runnable {
         }).start();
     }
 
+    // We differentiate between text events and non-text events
     public synchronized void queueEvent(Event event){
         if(event instanceof TextEvent){
+            // If the event is a text event we add it to the text event queue
             textEvents.put((TextEvent)event);
+            // We send an acknowledgement to ourself for the event.
             handleAcknowledgeEvent(new AcknowledgeEvent(callback.getID(), ((TextEvent) event).getTimestamp()));
         } else {
+            // else we add the event to the non-text event queue
             try {
                 nonTextEvents.put(event);
             } catch (InterruptedException e) {
