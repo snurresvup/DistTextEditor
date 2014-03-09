@@ -79,6 +79,7 @@ public class EventSender implements Runnable{
             }else if(event instanceof InitialSetupEvent) {
                 System.out.println("Writing Init event...");
             }
+            // We synchronize to avoid concurrent modification.
             synchronized (outputStreams) {
                 // For each output stream, write the object to that stream.
                 for(ObjectOutputStream out : outputStreams.values()){
