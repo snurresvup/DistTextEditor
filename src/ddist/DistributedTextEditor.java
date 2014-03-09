@@ -104,6 +104,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
             saveOld();
             setID(0.0);
             startListeningThread(getPortNumber());
+            setTitle("I'm listening on " + getIp() + ":" + getPortNumber());
         }
     };
 
@@ -137,7 +138,6 @@ public class DistributedTextEditor extends JFrame implements CallBack {
                 try {
                     serverSocket = new ServerSocket(port);
                     System.out.println(serverSocket.getLocalPort());
-                    setTitle("I'm listening on " + InetAddress.getLocalHost().getHostAddress() + ":"+ serverSocket.getLocalPort());
                     while(!interrupted()){
                         Socket socket = serverSocket.accept();
                         Disconnect.setEnabled(true);
@@ -317,7 +317,12 @@ public class DistributedTextEditor extends JFrame implements CallBack {
 
     @Override
     public String getIp() {
-        return serverSocket.getInetAddress().getHostAddress();
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return "localhost";
     }
 
     @Override

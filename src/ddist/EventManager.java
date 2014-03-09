@@ -6,6 +6,7 @@ import ddist.events.text.*;
 import javax.swing.*;
 import java.io.*;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -299,7 +300,17 @@ public class EventManager implements Runnable {
         synchronized (area) {
             dec.setFilter(true);
         }
-        callback.startListeningThread(0);
+        int port = 0;
+        try {
+            ServerSocket temp = new ServerSocket(0);
+            port = temp.getLocalPort();
+            temp.close();
+            temp = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        callback.startListeningThread(port);
+        callback.setTitleOfWindow("Connected! Listening on: " + callback.getIp() + ":" + port);
         callback.setConnect(false);
         callback.setDisconnect(true);
         callback.setListen(false);
