@@ -107,7 +107,7 @@ public class EventManager implements Runnable {
                             System.out.println("new id on receiver thread = " + realId);
                         }
                     } catch (IOException e) {
-                        queueEvent(new RemovePeerEvent(realId));
+                        handleRemovePeerEvent(new RemovePeerEvent(realId));
                         receiving = false;
                         e.printStackTrace();
                         break;

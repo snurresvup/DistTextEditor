@@ -124,7 +124,9 @@ public class EventSender implements Runnable{
     public void removePeer(double peerId) {
         synchronized (outputStreams) {
             try {
-                outputStreams.get(peerId).close();
+                if(outputStreams.get(peerId) != null) {
+                    outputStreams.get(peerId).close();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
