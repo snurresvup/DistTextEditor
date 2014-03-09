@@ -57,7 +57,8 @@ public class DocumentEventCapturer extends DocumentFilter {
 	
 	/* Queue a copy of the event and then modify the textarea */
         if(filtering){
-            TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTimestamp());
+            double tempTimestamp = Math.ceil(callBack.getTimestamp() * 10000) / 10000;
+            TextInsertEvent insertEvent = new TextInsertEvent(offset, str, tempTimestamp);
             updateOffset(insertEvent);
             addToEventHistory(insertEvent);
         }else{
@@ -203,7 +204,8 @@ public class DocumentEventCapturer extends DocumentFilter {
             throws BadLocationException {
 	/* Queue a copy of the event and then modify the textarea */
         if(filtering){
-            TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, callBack.getTimestamp());
+            double tempTimestamp = Math.ceil(callBack.getTimestamp() * 10000) / 10000;
+            TextRemoveEvent removeEvent = new TextRemoveEvent(offset, length, tempTimestamp);
             updateOffset(removeEvent);
             addToEventHistory(removeEvent);
         }else{
@@ -224,7 +226,9 @@ public class DocumentEventCapturer extends DocumentFilter {
                 updateOffset(removeEvent);
                 addToEventHistory(removeEvent);
             }
-            TextInsertEvent insertEvent = new TextInsertEvent(offset, str, callBack.getTimestamp());
+
+            double tempTimestamp = Math.ceil(callBack.getTimestamp() * 10000) / 10000;
+            TextInsertEvent insertEvent = new TextInsertEvent(offset, str, tempTimestamp);
             updateOffset(insertEvent);
             addToEventHistory(insertEvent);
         }else{

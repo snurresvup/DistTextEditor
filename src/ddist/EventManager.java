@@ -16,6 +16,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import static java.lang.Thread.interrupted;
 
 public class EventManager implements Runnable {
+    public static final double TIME_OFFSET = 0.0001;
     private PriorityBlockingQueue<TextEvent> textEvents = new PriorityBlockingQueue<>();
     private LinkedBlockingQueue<Event> nonTextEvents = new LinkedBlockingQueue<>();
 
@@ -258,6 +259,7 @@ public class EventManager implements Runnable {
                 connections.put(id, socket);
                 ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
                 inputStreams.add(inputStream);
+                System.out.println("id of new event is ### many pears ### " + id);
                 startEventReceiverThread(inputStream, id);
                 eventSender.addPeer(id, socket);
             } catch (IOException e) {
@@ -279,10 +281,10 @@ public class EventManager implements Runnable {
     }
 
     private void handleConnectionEvent(ConnectionEvent event) { //TODO multiple peers connecting to different listeners simultaneously
-        // When a client receives a connection from i peer, it sends a ConnectionEvent to its own eventManager. In this
+        // When a client receives a connection from a peer, it sends a ConnectionEvent to its own eventManager. In this
         // method we handle the initial setup of id's for the new peer, and telling him what the state of the
         // network / program is.
-        double id4Client = currentClientOffset + 0.0001;
+        double id4Client = currentClientOffset + TIME_OFFSET;
         connections.put(id4Client, event.getSocket());
         numberOfPeers++;
         try {
@@ -290,6 +292,7 @@ public class EventManager implements Runnable {
             eventSender.addPeer(id4Client, event.getSocket());
             ObjectInputStream inputStream = new ObjectInputStream(event.getSocket().getInputStream());
             inputStreams.add(inputStream);
+            System.out.println("lonely pear wants to connect to me with this funny id " + id4Client);
             startEventReceiverThread(inputStream, id4Client);
         } catch (IOException e) {
             e.printStackTrace();
