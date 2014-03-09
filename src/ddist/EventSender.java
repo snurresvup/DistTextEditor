@@ -32,8 +32,11 @@ public class EventSender implements Runnable{
             public void run() {
                 while (receiving) {
                     try {
+                        // Take an event from the queue of local events
                         Event event = dec.take();
+                        // Queue the event in the sender queue. This queue contains the events that should be sent to other peers.
                         queueEvent(event);
+                        // Queue the same event in our own event manager
                         eventManager.queueEvent(event); //TODO removed instanceof check here does it still work?
                     } catch (InterruptedException e) {
                         e.printStackTrace();
