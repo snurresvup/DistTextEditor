@@ -74,6 +74,7 @@ public class EventManager implements Runnable {
                     handleTextEvent(textEvent);
                 }
             }
+            // The next element in the queue might have enough acknowledgements, therefore we continue the loop if the event was executed and the queue is not empty.
         } while (textEvents.peek() != null && textEvent != textEvents.peek());
     }
 
