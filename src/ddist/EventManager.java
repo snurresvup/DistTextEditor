@@ -115,6 +115,10 @@ public class EventManager implements Runnable {
                                     "From: " + ((AcknowledgeEvent)input).getSenderId());
                         }else if(input instanceof TextInsertEvent) {
                             System.out.println("Received TextInsertEvent " + ((TextInsertEvent)input).getTimestamp() + "");
+                        }else if(input instanceof NewPeerEvent) {
+                            System.out.println("Received NewPeerEvent at " + callback.getID() + " from peer: " + ((NewPeerEvent) input).getPeerId());
+                        }else if(input instanceof InitialSetupEvent) {
+                            System.out.println("Received InitialSetupEvent at " + ((InitialSetupEvent) input).getClientOffset() + "containing: " + ((InitialSetupEvent) input).getPeers());
                         }
                         queueEvent((Event) input);
                     }
@@ -220,12 +224,14 @@ public class EventManager implements Runnable {
     }
 
     private void handleInitialSetupEvent(InitialSetupEvent initEvent) {
-        clearTextArea();
-        callback.setID(initEvent.getClientOffset());
-        callback.setTime(initEvent.getClientOffset() + Math.floor(initEvent.getTimestamp()) + 1);
-        handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
-        establishInitialConnections(initEvent.getPeers());
-        setNumberOfPeers(initEvent.getPeers());
+        if(numberOfPeers == 1){
+            clearTextArea();
+            callback.setID(initEvent.getClientOffset());
+            callback.setTime(initEvent.getClientOffset() + Math.floor(initEvent.getTimestamp()) + 1);
+            handleTextEvent(new TextInsertEvent(0, initEvent.getAreaText(), 0.0));
+            establishInitialConnections(initEvent.getPeers());
+            setNumberOfPeers(initEvent.getPeers());
+        }
     }
 
     private void establishInitialConnections(HashMap<Double, ConnectionInfo> peers) {
@@ -237,6 +243,7 @@ public class EventManager implements Runnable {
                 connections.put(id, socket);
                 ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
                 inputStreams.add(inputStream);
+                startEventReceiverThread(inputStream);
                 eventSender.addPeer(id, socket);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -250,12 +257,10 @@ public class EventManager implements Runnable {
     }
 
     private void setNumberOfPeers(HashMap<Double, ConnectionInfo> peers) {
-        numberOfPeers = peers.size() + 1;
+        numberOfPeers = peers.size() + 2;
     }
 
     private void handleConnectionEvent(ConnectionEvent event) { //TODO multiple peers connecting to different listeners simultaneously
-        Socket socket = event.getSocket();
-        InetAddress ip = socket.getInetAddress();
 
         double id4Client = numberOfPeers / 10000;
         connections.put(id4Client, event.getSocket());
