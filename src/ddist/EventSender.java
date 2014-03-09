@@ -59,7 +59,9 @@ public class EventSender implements Runnable{
         receiveLocalEvents();
         while (receiving) {
             try {
+                // Take an event from the outgoing queue.
                 Event event= queue.take();
+                // Pass it to the sendEvent helper method.
                 sendEvent(event);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -78,6 +80,7 @@ public class EventSender implements Runnable{
                 System.out.println("Writing Init event...");
             }
             synchronized (outputStreams) {
+                // For each output stream, write the object to that stream.
                 for(ObjectOutputStream out : outputStreams.values()){
                     out.writeObject(event);
                 }
