@@ -114,13 +114,17 @@ public class EventManager implements Runnable {
                             realId = Math.ceil(realId * 10000)/10000;
                             System.out.println("new id on receiver thread = " + realId);
                         }
-                    } catch (IOException e) {
+                    } catch (EOFException e) {
                         handleRemovePeerEvent(new RemovePeerEvent(realId));
                         receiving = false;
                         e.printStackTrace();
                         break;
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
+                    } catch (IOException io){
+                        handleRemovePeerEvent(new RemovePeerEvent(realId));
+                        receiving = false;
+                        io.printStackTrace();
                     }
                     if(input instanceof Event){
                         if(input instanceof AcknowledgeEvent){
@@ -362,6 +366,7 @@ public class EventManager implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         callback.startListeningThread(port);
         callback.setTitleOfWindow("Connected! Listening on: " + callback.getIp() + ":" + port);
         callback.setConnect(false);
@@ -378,7 +383,9 @@ public class EventManager implements Runnable {
     }
 
     public void disconnect() {
-        dec.setFilter(false);
+        synchronized (area) {
+            dec.setFilter(false);
+        }
         eventSender.close();
         closeInputStreams();
         textEvents.clear();
@@ -388,5 +395,6 @@ public class EventManager implements Runnable {
         connections.clear();
         callback.setTitleOfWindow("Disconnected");
         numberOfPeers = 1;
+
     }
 }

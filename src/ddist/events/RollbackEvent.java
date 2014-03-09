@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 public class RollbackEvent implements Event {
     private ArrayList<TextEvent> events;
+    private static final long serialVersionUID = 1L;
 
     public RollbackEvent(ArrayList<TextEvent> events) {
 

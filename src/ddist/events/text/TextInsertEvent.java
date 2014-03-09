@@ -3,7 +3,8 @@ package ddist.events.text;
 
 public class TextInsertEvent extends TextEvent {
 
-	private String text;
+    private static final long serialVersionUID = 1L;
+    private String text;
     private double timestamp;
 	
 	public TextInsertEvent(int offset, String text, Double time) {

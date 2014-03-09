@@ -104,7 +104,7 @@ public class EventSender implements Runnable{
 
     public void close() {
         try {
-            receiving = false;
+          //  receiving = false;
             for(ObjectOutputStream out : outputStreams.values()){
                 out.close();
             }

@@ -6,6 +6,8 @@ import java.lang.Comparable;
 
 public abstract class TextEvent implements Event, Comparable<TextEvent> {
 
+    private static final long serialVersionUID = 1L;
+
     public void setOffset(int offset) {
         this.offset = offset;
     }

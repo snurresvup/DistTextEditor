@@ -10,6 +10,7 @@ public class InitialSetupEvent implements Event {
     private double clientOffset;
     private double timestamp;
     private HashMap<Double, ConnectionInfo> peers;
+    private static final long serialVersionUID = 1L;
 
     public InitialSetupEvent(String areaText, double clientOffset, double timestamp, HashMap<Double, ConnectionInfo> peers) {
         this.areaText = areaText;

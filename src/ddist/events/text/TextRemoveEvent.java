@@ -2,6 +2,7 @@ package ddist.events.text;
 
 public class TextRemoveEvent extends TextEvent {
 
+    private static final long serialVersionUID = 1L;
     private int length;
     private double timestamp;
 
