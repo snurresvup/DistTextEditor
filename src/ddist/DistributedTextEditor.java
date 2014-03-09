@@ -21,7 +21,7 @@ public class DistributedTextEditor extends JFrame implements CallBack {
 
 
 
-    private JTextArea area = new JTextArea(40,120);
+    private final JTextArea area = new JTextArea(40,120);
     private JTextField ipaddress = new JTextField("IP address here");
     private JTextField portNumber = new JTextField("Port number here");
     protected ServerSocket serverSocket;

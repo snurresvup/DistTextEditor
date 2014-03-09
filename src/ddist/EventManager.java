@@ -21,7 +21,7 @@ public class EventManager implements Runnable {
     private EventSender eventSender;
     private Thread est;
     private EventReplayer eventReplayer;
-    private JTextArea area;
+    private final JTextArea area;
     private DocumentEventCapturer dec;
     private CallBack callback;
     private HashMap<Double, ConnectionInfo> peers = new HashMap<>();
